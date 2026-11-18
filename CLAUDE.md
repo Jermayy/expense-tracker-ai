@@ -44,7 +44,7 @@ npm run check        # full CI sequence incl. build
 
 - No server: health endpoints, structured server logs, CSP headers and server-side validation are N/A ([ADR 0001](docs/adr/0001-nextjs-14-static-export-localstorage.md)).
 - Next 14 has unpatched advisories; accepted only because production is a static export (ADR 0001).
-- No error tracker or CI pipeline configured yet.
+- No error tracker configured yet. CI (`.github/workflows/ci.yml`) runs the `npm run check` steps, gitleaks and a non-blocking `npm audit` (blocking would always fail on the accepted Next 14 advisories).
 
 ## Sensitive areas
 
