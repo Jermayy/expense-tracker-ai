@@ -8,6 +8,9 @@
 A personal expense tracker built with Next.js 14 (App Router), TypeScript and Tailwind CSS.
 Add, edit, filter and analyse your spending; export to CSV. All data stays in your browser (`localStorage`).
 
+**[Live demo: spendwise-jermayy.vercel.app](https://spendwise-jermayy.vercel.app)**. Click
+"Load sample data" to explore it with realistic expenses.
+
 > **Learning exercise.** This project was built for **Claude Code: Software Engineering with
 > Generative AI Agents**, a **Vanderbilt University** course on **Coursera**. The exercise: take a single, large,
 > detailed prompt and have an AI coding agent turn it into a complete, production-ready
@@ -56,16 +59,16 @@ context and guardrails I gave the agent alongside the prompt:
 
 ### What "production-ready" meant here
 
-| Area           | What's in the repo                                                                                                                                                                                                                      |
-| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Architecture   | Code organised by feature; a pure domain layer (`src/features/expenses/domain`) with no React; one provider is the only code that writes to storage                                                                                     |
-| Data integrity | Money stored as integer cents (never floats); calendar dates with no timezone shift; a versioned storage envelope validated on every load; corrupt data is never silently overwritten                                                   |
-| Security       | [ADR 0001](docs/adr/0001-nextjs-14-static-export-localstorage.md): `npm audit` flagged open advisories in Next 14, so the app ships as a static export with no server attack surface. CSV export is protected against formula injection |
-| Testing        | 84 tests across 11 files (Vitest + Testing Library): domain rules, filters, analytics, CSV, storage failures, provider behaviour, form validation and dialog focus. Deterministic: injected clock, IDs and storage, pinned timezone     |
-| Accessibility  | Semantic HTML, labelled fields, keyboard operable, managed modal focus, accessible undo toasts, OS light/dark theme                                                                                                                     |
-| UX states      | Loading, empty, error and success states on every view; undo on delete; multi-tab sync                                                                                                                                                  |
-| Delivery       | GitHub Actions on every push and PR: install from lockfile, format, lint, type check, tests, build, plus gitleaks secret scanning and a dependency audit. Dependabot keeps dependencies and actions current                             |
-| Tooling        | TypeScript strict, ESLint, Prettier, pinned Node version (`.nvmrc`), one command for the full CI sequence                                                                                                                               |
+| Area           | What's in the repo                                                                                                                                                                                                                                                                                                                                       |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Architecture   | Code organised by feature; a pure domain layer (`src/features/expenses/domain`) with no React; one provider is the only code that writes to storage                                                                                                                                                                                                      |
+| Data integrity | Money stored as integer cents (never floats); calendar dates with no timezone shift; a versioned storage envelope validated on every load; corrupt data is never silently overwritten                                                                                                                                                                    |
+| Security       | [ADR 0001](docs/adr/0001-nextjs-14-static-export-localstorage.md): `npm audit` flagged open advisories in Next 14, so the app ships as a static export with no server attack surface. [ADR 0002](docs/adr/0002-vercel-hosting-and-security-headers.md): CSP and security headers set in `vercel.json`. CSV export is protected against formula injection |
+| Testing        | 84 tests across 11 files (Vitest + Testing Library): domain rules, filters, analytics, CSV, storage failures, provider behaviour, form validation and dialog focus. Deterministic: injected clock, IDs and storage, pinned timezone                                                                                                                      |
+| Accessibility  | Semantic HTML, labelled fields, keyboard operable, managed modal focus, accessible undo toasts, OS light/dark theme                                                                                                                                                                                                                                      |
+| UX states      | Loading, empty, error and success states on every view; undo on delete; multi-tab sync                                                                                                                                                                                                                                                                   |
+| Delivery       | GitHub Actions on every push and PR: install from lockfile, format, lint, type check, tests, build, plus gitleaks secret scanning and a dependency audit. `main` is protected: changes land by pull request with green CI. Vercel deploys a preview for every PR and production on merge. Dependabot keeps dependencies and actions current              |
+| Tooling        | TypeScript strict, ESLint, Prettier, pinned Node version (`.nvmrc`), one command for the full CI sequence                                                                                                                                                                                                                                                |
 
 ### What it shows about my progression
 
@@ -81,7 +84,8 @@ context and guardrails I gave the agent alongside the prompt:
 
 - No error tracker configured yet.
 - The CI dependency audit reports but doesn't block, because of the accepted Next 14 advisories (ADR 0001).
-- Branch protection on `main` (require green CI before merging) is a GitHub setting, not in the repo.
+- The CSP allows inline scripts and styles, which a Next static export needs (ADR 0002).
+- Branch protection is a GitHub setting, so it isn't versioned in the repo.
 - Next 14 is end of life; upgrading to a supported major is the first follow-up (ADR 0001).
 - Data is per browser and per device. There's no backend, sync or auth by design.
 
@@ -141,7 +145,7 @@ docs/screenshots/            README images
 - **Money** is stored as integer cents, parsed from text without floats. Currency is AUD (`domain/money.ts`).
 - **Dates** are `YYYY-MM-DD` local calendar dates, so there are no timezone shifts.
 - **Persistence** writes to storage first and only then updates the UI. If a write fails (e.g. quota), the UI keeps the previous state and shows an error.
-- **Deployment**: static export (`output: "export"`). Host `out/` on any static host (Vercel, Netlify, S3+CloudFront, GitHub Pages). See [ADR 0001](docs/adr/0001-nextjs-14-static-export-localstorage.md) for why, including the Next 14 security note.
+- **Deployment**: static export (`output: "export"`), hosted on Vercel and connected to this repo. Pull requests get a preview deployment; merging to `main` deploys to production. Security headers live in `vercel.json`. Roll back by promoting a previous deployment (`vercel rollback`). See [ADR 0001](docs/adr/0001-nextjs-14-static-export-localstorage.md) for the static export and the Next 14 security note, and [ADR 0002](docs/adr/0002-vercel-hosting-and-security-headers.md) for hosting and headers.
 
 ## Privacy
 
