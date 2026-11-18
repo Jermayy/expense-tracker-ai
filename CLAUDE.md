@@ -42,7 +42,9 @@ npm run check        # full CI sequence incl. build
 
 ## Deviations from the playbook
 
-- No server: health endpoints, structured server logs, CSP headers and server-side validation are N/A ([ADR 0001](docs/adr/0001-nextjs-14-static-export-localstorage.md)).
+- No server: health endpoints, structured server logs and server-side validation are N/A ([ADR 0001](docs/adr/0001-nextjs-14-static-export-localstorage.md)).
+- Hosted on Vercel (git-connected: PR previews, production on merge to `main`). CSP and security headers live in `vercel.json` and allow `'unsafe-inline'` because the static export needs it ([ADR 0002](docs/adr/0002-vercel-hosting-and-security-headers.md)). Re-check the app for CSP violations after changing headers or adding any external resource.
+- `main` is protected: changes go through a PR with the CI checks green.
 - Next 14 has unpatched advisories; accepted only because production is a static export (ADR 0001).
 - No error tracker configured yet. CI (`.github/workflows/ci.yml`) runs the `npm run check` steps, gitleaks and a non-blocking `npm audit` (blocking would always fail on the accepted Next 14 advisories).
 
