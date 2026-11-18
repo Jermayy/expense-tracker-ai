@@ -1,36 +1,123 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Spendwise: Expense Tracker
 
-## Getting Started
+A personal expense tracker built with Next.js 14 (App Router), TypeScript and Tailwind CSS.
+Add, edit, filter and analyse your spending; export to CSV. All data stays in your browser (`localStorage`).
 
-First, run the development server:
+> **Learning exercise.** This project was built for a **Vanderbilt University** course on
+> **Coursera** about AI agents for software engineering. The exercise: take a single, large,
+> detailed prompt and have an AI coding agent turn it into a complete, production-ready
+> application, not a throwaway demo. I'm using it to show my progress in agentic AI development.
+
+## About the exercise
+
+### The brief
+
+One large prompt described the whole app: the stack (Next.js 14 App Router, TypeScript,
+Tailwind), the features (CRUD on expenses, dashboard analytics, filtering, CSV export), the
+data model, and the quality bar ("production-ready"). The agent used was
+[Claude Code](https://claude.com/claude-code).
+
+### How I approached it
+
+A big prompt alone gets you a big pile of code. What made the result production-ready was the
+context and guardrails I gave the agent alongside the prompt:
+
+- **A personal engineering playbook.** Standards for architecture, security, data, front end,
+  testing, accessibility and documentation, loaded into every session through `CLAUDE.md`.
+  The agent had to follow it and justify any deviation in writing.
+- **A project `CLAUDE.md`** ([CLAUDE.md](CLAUDE.md)) recording this project's stack, commands,
+  conventions and accepted deviations, so later sessions start with the right context.
+- **A definition of done.** Format, lint, type check, tests and build must all pass
+  (`npm run check`) before work counts as finished, and the agent has to report what it
+  verified and what it didn't.
+- **Decisions written down.** Choices that are hard to reverse get an Architecture Decision
+  Record instead of being buried in code.
+
+### What "production-ready" meant here
+
+| Area           | What's in the repo                                                                                                                                                                                                                      |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Architecture   | Code organised by feature; a pure domain layer (`src/features/expenses/domain`) with no React; one provider is the only code that writes to storage                                                                                     |
+| Data integrity | Money stored as integer cents (never floats); calendar dates with no timezone shift; a versioned storage envelope validated on every load; corrupt data is never silently overwritten                                                   |
+| Security       | [ADR 0001](docs/adr/0001-nextjs-14-static-export-localstorage.md): `npm audit` flagged open advisories in Next 14, so the app ships as a static export with no server attack surface. CSV export is protected against formula injection |
+| Testing        | 84 tests across 11 files (Vitest + Testing Library): domain rules, filters, analytics, CSV, storage failures, provider behaviour, form validation and dialog focus. Deterministic: injected clock, IDs and storage, pinned timezone     |
+| Accessibility  | Semantic HTML, labelled fields, keyboard operable, managed modal focus, accessible undo toasts, OS light/dark theme                                                                                                                     |
+| UX states      | Loading, empty, error and success states on every view; undo on delete; multi-tab sync                                                                                                                                                  |
+| Tooling        | TypeScript strict, ESLint, Prettier, pinned Node version (`.nvmrc`), one command for the full CI sequence                                                                                                                               |
+
+### What it shows about my progression
+
+- **From prompting to directing.** The prompt says _what_ to build; the playbook and
+  `CLAUDE.md` say _how_. Persistent, reusable context beats repeating instructions in each prompt.
+- **Verification over trust.** Generated code isn't done until checks and tests pass. The agent
+  is expected to prove its work, not assert it.
+- **Judgement stays human.** When the brief (Next 14) conflicted with security (unpatched
+  advisories), the trade-off was surfaced, decided and recorded in an ADR rather than ignored.
+- **Honest gaps.** Known limits are written down instead of hidden (see below).
+
+### Known gaps
+
+- No CI pipeline or error tracker configured yet.
+- Next 14 is end of life; upgrading to a supported major is the first follow-up (ADR 0001).
+- Data is per browser and per device. There's no backend, sync or auth by design.
+
+## Features
+
+- **Add / edit / delete** expenses (date, amount, category, description), with inline validation and **undo** on delete
+- **Dashboard**: total, this month (vs last month), daily average, top category, 6-month trend chart, category breakdown, recent expenses
+- **Expenses list**: text search, date-range and multi-category filters, sorting. Filters are stored in the URL, so you can bookmark or refresh a filtered view
+- **CSV export** of the current filtered view (Excel-safe UTF-8, protected against formula injection)
+- Responsive layout (table on desktop, cards on mobile), light/dark theme from your OS setting, keyboard and screen-reader friendly
+- Clear loading, empty and error states. If stored data is corrupt it's never silently overwritten: you can download a backup first
+- Multi-tab sync: changes in one tab show up in the others
+
+## Quick start
+
+Requires Node 20+ (`.nvmrc`).
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm ci            # install from lockfile
+npm run dev       # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+No environment variables are needed (there's no backend), so there's no `.env.example`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Commands
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Command                           | What it does                                                |
+| --------------------------------- | ----------------------------------------------------------- |
+| `npm run dev`                     | Dev server with hot reload                                  |
+| `npm test`                        | Unit + component tests (Vitest, jsdom)                      |
+| `npm run lint`                    | ESLint                                                      |
+| `npm run typecheck`               | TypeScript strict check                                     |
+| `npm run format` / `format:check` | Prettier                                                    |
+| `npm run build`                   | Static export to `out/`                                     |
+| `npm start`                       | Serve the built `out/` folder locally                       |
+| `npm run check`                   | Everything CI should run: format, lint, types, tests, build |
 
-## Learn More
+## Structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+  app/                       routes: / (dashboard), /expenses, layout, error + 404 pages
+  components/                AppShell + ui/ primitives (Modal, Toast, ConfirmDialog, styles)
+  features/expenses/
+    domain/                  types, money (integer cents), dates, validation (pure, no React)
+    lib/                     filters, analytics, CSV, localStorage repository, sample data
+    state/                   ExpensesProvider: React context, persists before committing to state
+    components/              form, dialog, list, filters bar, charts, summary cards, views
+tests/                       Vitest tests
+docs/adr/                    architecture decisions
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Design notes
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Money** is stored as integer cents, parsed from text without floats. Currency is AUD (`domain/money.ts`).
+- **Dates** are `YYYY-MM-DD` local calendar dates, so there are no timezone shifts.
+- **Persistence** writes to storage first and only then updates the UI. If a write fails (e.g. quota), the UI keeps the previous state and shows an error.
+- **Deployment**: static export (`output: "export"`). Host `out/` on any static host (Vercel, Netlify, S3+CloudFront, GitHub Pages). See [ADR 0001](docs/adr/0001-nextjs-14-static-export-localstorage.md) for why, including the Next 14 security note.
 
-## Deploy on Vercel
+## Privacy
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Expenses never leave the browser: no analytics, no network calls. Clearing site data, private
+windows, or Safari's 7-day storage eviction can delete them, so **export to CSV regularly**.
