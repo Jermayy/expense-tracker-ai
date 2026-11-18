@@ -3,8 +3,8 @@
 A personal expense tracker built with Next.js 14 (App Router), TypeScript and Tailwind CSS.
 Add, edit, filter and analyse your spending; export to CSV. All data stays in your browser (`localStorage`).
 
-> **Learning exercise.** This project was built for a **Vanderbilt University** course on
-> **Coursera** about AI agents for software engineering. The exercise: take a single, large,
+> **Learning exercise.** This project was built for **Claude Code: Software Engineering with
+> Generative AI Agents**, a **Vanderbilt University** course on **Coursera**. The exercise: take a single, large,
 > detailed prompt and have an AI coding agent turn it into a complete, production-ready
 > application, not a throwaway demo. I'm using it to show my progress in agentic AI development.
 
@@ -13,8 +13,10 @@ Add, edit, filter and analyse your spending; export to CSV. All data stays in yo
 ### The brief
 
 One large prompt described the whole app: the stack (Next.js 14 App Router, TypeScript,
-Tailwind), the features (CRUD on expenses, dashboard analytics, filtering, CSV export), the
-data model, and the quality bar ("production-ready"). The agent used was
+Tailwind, React hooks), the features (add/edit/delete expenses, search and filters, summary
+cards, charts, CSV export), the design bar (responsive, loading and error states, visual
+feedback) and the quality bar ("a complete, production-ready application"). The full prompt is
+in [docs/prompt.md](docs/prompt.md). The agent used was
 [Claude Code](https://claude.com/claude-code).
 
 ### How I approached it
