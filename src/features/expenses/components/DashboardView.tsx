@@ -25,9 +25,16 @@ export function DashboardView() {
   const recent = useMemo(() => applyFilters(expenses, DEFAULT_FILTERS).slice(0, RECENT_COUNT), [expenses]);
 
   const header = (
-    <div className="mb-6">
-      <h1 className="text-2xl font-semibold tracking-tight text-ink">Dashboard</h1>
-      <p className="mt-1 text-sm text-ink-muted">An overview of where your money goes.</p>
+    <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight text-ink">Dashboard</h1>
+        <p className="mt-1 text-sm text-ink-muted">An overview of where your money goes.</p>
+      </div>
+      {status === "ready" && expenses.length > 0 && (
+        <Link href="/exports/" className={buttonStyles.secondary}>
+          Export &amp; share
+        </Link>
+      )}
     </div>
   );
 

@@ -64,7 +64,7 @@ context and guardrails I gave the agent alongside the prompt:
 | Architecture   | Code organised by feature; a pure domain layer (`src/features/expenses/domain`) with no React; one provider is the only code that writes to storage                                                                                                                                                                                                      |
 | Data integrity | Money stored as integer cents (never floats); calendar dates with no timezone shift; a versioned storage envelope validated on every load; corrupt data is never silently overwritten                                                                                                                                                                    |
 | Security       | [ADR 0001](docs/adr/0001-nextjs-14-static-export-localstorage.md): `npm audit` flagged open advisories in Next 14, so the app ships as a static export with no server attack surface. [ADR 0002](docs/adr/0002-vercel-hosting-and-security-headers.md): CSP and security headers set in `vercel.json`. CSV export is protected against formula injection |
-| Testing        | 84 tests across 11 files (Vitest + Testing Library): domain rules, filters, analytics, CSV, storage failures, provider behaviour, form validation and dialog focus. Deterministic: injected clock, IDs and storage, pinned timezone                                                                                                                      |
+| Testing        | 117 tests across 16 files (Vitest + Testing Library): domain rules, filters, analytics, CSV, export templates, schedules, export jobs, the exports hub, storage failures, provider behaviour, form validation and dialog focus. Deterministic: injected clock, IDs and storage, pinned timezone                                                          |
 | Accessibility  | Semantic HTML, labelled fields, keyboard operable, managed modal focus, accessible undo toasts, OS light/dark theme                                                                                                                                                                                                                                      |
 | UX states      | Loading, empty, error and success states on every view; undo on delete; multi-tab sync                                                                                                                                                                                                                                                                   |
 | Delivery       | GitHub Actions on every push and PR: install from lockfile, format, lint, type check, tests, build, plus gitleaks secret scanning and a dependency audit. `main` is protected: changes land by pull request with green CI. Vercel deploys a preview for every PR and production on merge. Dependabot keeps dependencies and actions current              |
@@ -95,6 +95,7 @@ context and guardrails I gave the agent alongside the prompt:
 - **Dashboard**: total, this month (vs last month), daily average, top category, 6-month trend chart, category breakdown, recent expenses
 - **Expenses list**: text search, date-range and multi-category filters, sorting. Filters are stored in the URL, so you can bookmark or refresh a filtered view
 - **CSV export** of the current filtered view (Excel-safe UTF-8, protected against formula injection)
+- **Exports hub** (`/exports`): templates (tax report by Australian financial year, monthly summary, category analysis, full JSON data), optional redaction of descriptions, downloads or your device's share sheet, export history with SHA-256 fingerprints, schedules that flag due exports, and a background activity tray. Email, share links/QR codes, Google Sheets, Dropbox and OneDrive are **simulated and labelled Demo**; nothing leaves the device ([ADR 0003](docs/adr/0003-exports-hub-with-simulated-cloud-integrations.md))
 - Responsive layout (table on desktop, cards on mobile), light/dark theme from your OS setting, keyboard and screen-reader friendly
 - Clear loading, empty and error states. If stored data is corrupt it's never silently overwritten: you can download a backup first
 - Multi-tab sync: changes in one tab show up in the others
@@ -133,6 +134,7 @@ src/
     domain/                  types, money (integer cents), dates, validation (pure, no React)
     lib/                     filters, analytics, CSV, localStorage repository, sample data
     state/                   ExpensesProvider: React context, persists before committing to state
+  features/exports/          exports hub: domain (templates, destinations, schedules), lib (job runner, storage), state, components
     components/              form, dialog, list, filters bar, charts, summary cards, views
 tests/                       Vitest tests
 docs/adr/                    architecture decisions

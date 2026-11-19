@@ -5,10 +5,14 @@ import { usePathname } from "next/navigation";
 import { buttonStyles } from "@/components/ui/styles";
 import { useExpenseDialog } from "@/features/expenses/components/ExpenseDialog";
 import { useExpenses } from "@/features/expenses/state/ExpensesProvider";
+import { ActivityTray } from "@/features/exports/components/ActivityTray";
+import { SyncStatus } from "@/features/exports/components/SyncStatus";
+import { useExportHub } from "@/features/exports/state/ExportHubProvider";
 
 const NAV = [
   { href: "/", label: "Dashboard" },
   { href: "/expenses/", label: "Expenses" },
+  { href: "/exports/", label: "Exports" },
 ];
 
 function isActive(pathname: string, href: string): boolean {
@@ -20,6 +24,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { openAdd } = useExpenseDialog();
   const { status } = useExpenses();
+  const { dueSchedules } = useExportHub();
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -57,11 +62,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   }`}
                 >
                   {item.label}
+                  {item.href === "/exports/" && dueSchedules.length > 0 && (
+                    <>
+                      <span
+                        aria-hidden
+                        className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-accent align-middle"
+                      />
+                      <span className="sr-only"> ({dueSchedules.length} due)</span>
+                    </>
+                  )}
                 </Link>
               );
             })}
           </nav>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-3">
+            <SyncStatus />
             <button type="button" className={buttonStyles.primary} onClick={openAdd} disabled={status !== "ready"}>
               <svg aria-hidden viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
                 <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
@@ -76,6 +91,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <main id="main" className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
         {children}
       </main>
+      <ActivityTray />
       <footer className="border-t border-line py-6 text-center text-xs text-ink-soft">
         Your data is stored only in this browser. Export to CSV regularly to keep a backup.
       </footer>

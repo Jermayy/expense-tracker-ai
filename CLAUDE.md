@@ -30,7 +30,8 @@ npm run check        # full CI sequence incl. build
 
 - `src/features/expenses/domain`: pure types/rules (money in cents, ISO dates, validation). No React.
 - `src/features/expenses/lib`: filters, analytics, CSV, storage repository.
-- `src/features/expenses/state/ExpensesProvider.tsx`: the only place that writes storage.
+- `src/features/expenses/state/ExpensesProvider.tsx`: the only place that writes expense storage.
+- `src/features/exports`: exports hub. Pure `domain/` (templates, destinations, schedules), `lib/runJob.ts` (step pipeline, injectable deps), `state/ExportHubProvider.tsx` (owns the separate `expense-tracker:exports:v1` key). Simulated destinations must stay labelled Demo ([ADR 0003](docs/adr/0003-exports-hub-with-simulated-cloud-integrations.md)).
 - `src/components/ui`: shared primitives; colours are CSS-variable tokens in `globals.css`, mapped in `tailwind.config.ts`.
 
 ## Conventions specific to this project
