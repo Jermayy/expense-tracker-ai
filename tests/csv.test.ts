@@ -7,7 +7,7 @@ describe("expensesToCsv", () => {
     const csv = expensesToCsv([
       buildExpense({ date: "2026-11-01", description: "Lunch", category: "Food", amountCents: 1250 }),
     ]);
-    expect(csv).toBe("Date,Description,Category,Amount (AUD)\r\n2026-11-01,Lunch,Food,12.50");
+    expect(csv).toBe("Date,Category,Amount (AUD),Description\r\n2026-11-01,Food,12.50,Lunch");
   });
 });
 

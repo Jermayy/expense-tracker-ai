@@ -13,6 +13,7 @@ import { useExpenseDialog } from "./ExpenseDialog";
 import { ExpenseList } from "./ExpenseList";
 import { EmptyState, LoadErrorView, LoadingSkeleton } from "./StatusViews";
 import { SummaryCards } from "./SummaryCards";
+import { useCsvExport } from "./useCsvExport";
 
 const RECENT_COUNT = 5;
 
@@ -20,14 +21,22 @@ export function DashboardView() {
   const { status, loadError, expenses, loadSampleData } = useExpenses();
   const { openAdd } = useExpenseDialog();
   const toast = useToast();
+  const exportCsv = useCsvExport();
   const now = useMemo(() => new Date(), []);
   const summary = useMemo(() => summarize(expenses, now), [expenses, now]);
   const recent = useMemo(() => applyFilters(expenses, DEFAULT_FILTERS).slice(0, RECENT_COUNT), [expenses]);
 
   const header = (
-    <div className="mb-6">
-      <h1 className="text-2xl font-semibold tracking-tight text-ink">Dashboard</h1>
-      <p className="mt-1 text-sm text-ink-muted">An overview of where your money goes.</p>
+    <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight text-ink">Dashboard</h1>
+        <p className="mt-1 text-sm text-ink-muted">An overview of where your money goes.</p>
+      </div>
+      {status === "ready" && expenses.length > 0 && (
+        <button type="button" className={buttonStyles.secondary} onClick={() => exportCsv(expenses)}>
+          Export Data
+        </button>
+      )}
     </div>
   );
 

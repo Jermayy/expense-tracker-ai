@@ -6,13 +6,13 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/Toast";
 import { buttonStyles, card } from "@/components/ui/styles";
 import { formatCents } from "../domain/money";
-import { csvFilename, downloadCsv, expensesToCsv } from "../lib/csv";
 import { applyFilters, filtersFromSearchParams, filtersToSearchParams, hasActiveFilters } from "../lib/filters";
 import { useExpenses } from "../state/ExpensesProvider";
 import { useExpenseDialog } from "./ExpenseDialog";
 import { ExpenseFiltersBar } from "./ExpenseFiltersBar";
 import { ExpenseList } from "./ExpenseList";
 import { EmptyState, LoadErrorView, LoadingSkeleton } from "./StatusViews";
+import { useCsvExport } from "./useCsvExport";
 
 export function ExpensesView() {
   const searchParams = useSearchParams();
@@ -21,6 +21,7 @@ export function ExpensesView() {
   const toast = useToast();
   const [filters, setFilters] = useState(() => filtersFromSearchParams(new URLSearchParams(searchParams.toString())));
   const [confirmClear, setConfirmClear] = useState(false);
+  const exportCsv = useCsvExport();
 
   // The URL mirrors the filters so a filtered view can be bookmarked or refreshed.
   useEffect(() => {
@@ -40,16 +41,6 @@ export function ExpensesView() {
   const filteredTotal = useMemo(() => filtered.reduce((sum, e) => sum + e.amountCents, 0), [filtered]);
   const filtering = hasActiveFilters(filters);
 
-  function exportCsv() {
-    try {
-      downloadCsv(expensesToCsv(filtered), csvFilename(new Date()));
-      toast.show(`Exported ${filtered.length} ${filtered.length === 1 ? "expense" : "expenses"} to CSV`);
-    } catch (err) {
-      console.error("[export] csv failed", err);
-      toast.show("Export failed. Please try again.", { tone: "error" });
-    }
-  }
-
   const header = (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div>
@@ -66,7 +57,12 @@ export function ExpensesView() {
           <button type="button" className={buttonStyles.ghost} onClick={() => setConfirmClear(true)}>
             Clear all
           </button>
-          <button type="button" className={buttonStyles.secondary} onClick={exportCsv} disabled={filtered.length === 0}>
+          <button
+            type="button"
+            className={buttonStyles.secondary}
+            onClick={() => exportCsv(filtered)}
+            disabled={filtered.length === 0}
+          >
             <svg aria-hidden viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
               <path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.614L6.295 8.235a.75.75 0 1 0-1.09 1.03l4.25 4.5a.75.75 0 0 0 1.09 0l4.25-4.5a.75.75 0 0 0-1.09-1.03l-2.955 3.129V2.75Z" />
               <path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" />

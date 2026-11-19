@@ -3,7 +3,7 @@ import { centsToDecimalString, CURRENCY } from "../domain/money";
 import type { Expense } from "../domain/types";
 import { downloadFile } from "./download";
 
-const HEADER = ["Date", "Description", "Category", `Amount (${CURRENCY})`];
+const HEADER = ["Date", "Category", `Amount (${CURRENCY})`, "Description"];
 
 /** Characters that make spreadsheet apps treat a cell as a formula (CSV injection). */
 const FORMULA_TRIGGER = /^[=+\-@\t\r]/;
@@ -14,7 +14,7 @@ export function escapeCsvCell(value: string): string {
 }
 
 export function expensesToCsv(expenses: readonly Expense[]): string {
-  const rows = expenses.map((e) => [e.date, e.description, e.category, centsToDecimalString(e.amountCents)]);
+  const rows = expenses.map((e) => [e.date, e.category, centsToDecimalString(e.amountCents), e.description]);
   // CRLF per RFC 4180; Excel and Numbers both handle it.
   return [HEADER, ...rows].map((row) => row.map(escapeCsvCell).join(",")).join("\r\n");
 }
