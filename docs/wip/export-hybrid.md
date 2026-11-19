@@ -177,3 +177,30 @@ useful part (a timely nudge) and drops the configuration.
 
 **Not taken from V3:** schedule configuration, frequencies, scheduled cloud uploads, the
 header sync-status pill.
+
+### Step 7: browser check and permanent docs
+
+- **Checked in Chrome** on the dev server (dashboard split button, dialog with Tax report
+  layout, Last FY preset, redaction, Share… button). No console errors.
+- **Fix found by that check:** with steps 4–5 the options column grew long, so the preview
+  scrolled out of view leaving empty space. The preview column is now sticky on wide screens
+  (`ExportPanel.tsx`).
+- **Permanent docs** (these stay after `docs/wip/` is deleted): README features, test count
+  and structure; CLAUDE.md structure notes for `export/` and `backupReminder.ts`.
+- Final measurements: `/` 112 kB, `/expenses` 103 kB first load (V1: 110 / 100, V2: 115 / 106);
+  export dialog and PDF writer load on first open.
+
+## Before merging: scrub checklist
+
+1. Decide this is the version to merge (V1–V3 branches and the tags above stay as references).
+2. Delete `docs/wip/` in a final commit (`git rm -r docs/wip`).
+3. Mark the PR ready; CI's "No branch-only docs" check must pass.
+4. Optional: once no branch uses `docs/wip/`, the `wip-docs` CI job can stay (it's harmless and
+   reusable) or be removed together with the CLAUDE.md note.
+
+## Known gaps
+
+- Not checked at phone width or in light mode.
+- The real download, the device share sheet and the backup banner weren't triggered in a
+  browser (covered by automated tests).
+- PDF text is Latin-only (ADR 0003).

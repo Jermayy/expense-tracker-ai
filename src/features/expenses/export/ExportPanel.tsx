@@ -165,7 +165,7 @@ export function ExportPanel({ initial, onBusyChange, onDone }: ExportPanelProps)
           />
         </fieldset>
 
-        <div className="min-w-0 space-y-4">
+        <div className="min-w-0 space-y-4 md:sticky md:top-0 md:self-start">
           <ExportSummaryStats summary={summary} />
           <ExportPreviewTable records={records} redacted={redacting} />
         </div>

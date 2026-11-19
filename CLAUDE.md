@@ -30,7 +30,9 @@ npm run check        # full CI sequence incl. build
 
 - `src/features/expenses/domain`: pure types/rules (money in cents, ISO dates, validation). No React.
 - `src/features/expenses/lib`: filters, analytics, CSV, storage repository.
-- `src/features/expenses/state/ExpensesProvider.tsx`: the only place that writes storage.
+- `src/features/expenses/state/ExpensesProvider.tsx`: the only place that writes expense storage.
+- `src/features/expenses/export`: export dialog. `ExportDialog.tsx` is the light provider; `ExportPanel.tsx` and the encoders load on first open (`next/dynamic`). `options.ts` is pure (selection, validation, layouts, `isFullBackup`); `formats/` has one encoder per format behind `FORMAT_SPECS`; redaction is applied once in `runExport.ts`.
+- `src/features/expenses/lib/backupReminder.ts`: last-backup/snooze state under its own key `expense-tracker:backup:v1`.
 - `src/components/ui`: shared primitives; colours are CSS-variable tokens in `globals.css`, mapped in `tailwind.config.ts`.
 
 ## Conventions specific to this project
