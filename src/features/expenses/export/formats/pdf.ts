@@ -1,7 +1,6 @@
 import { formatDate } from "../../domain/dates";
 import { CURRENCY, LOCALE, formatCents } from "../../domain/money";
-import { CATEGORIES } from "../../domain/types";
-import type { ExportOptions } from "../options";
+import { describeCategories, describePeriod } from "./describe";
 import { buildPdf, PAGE_HEIGHT, PAGE_WIDTH, PdfPage, truncateToWidth, type Rgb } from "./pdfDocument";
 import type { ExportContext, ExportFormatSpec } from "./types";
 
@@ -28,17 +27,6 @@ const ZEBRA: Rgb = [0.965, 0.97, 0.975];
 const PANEL: Rgb = [0.95, 0.96, 0.97];
 
 const generatedFormatter = new Intl.DateTimeFormat(LOCALE, { dateStyle: "medium", timeStyle: "short" });
-
-export function describePeriod({ from, to }: Pick<ExportOptions, "from" | "to">): string {
-  if (from && to) return `${formatDate(from)} – ${formatDate(to)}`;
-  if (from) return `From ${formatDate(from)}`;
-  if (to) return `Up to ${formatDate(to)}`;
-  return "All dates";
-}
-
-export function describeCategories({ categories }: Pick<ExportOptions, "categories">): string {
-  return categories.length === CATEGORIES.length ? "All categories" : categories.join(", ");
-}
 
 function drawTableHeader(page: PdfPage, y: number): number {
   const style = { size: 7.5, color: MUTED, font: "bold" } as const;

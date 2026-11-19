@@ -1,9 +1,24 @@
 import { isIsoDate, toIsoDate } from "../domain/dates";
+import { currentFinancialYear, financialYearRange, financialYearToDate } from "../domain/financialYear";
 import { CATEGORIES, type Category, type Expense, type IsoDate } from "../domain/types";
 import { applyFilters, DEFAULT_FILTERS } from "../lib/filters";
 
 export const EXPORT_FORMATS = ["csv", "json", "pdf"] as const;
 export type ExportFormat = (typeof EXPORT_FORMATS)[number];
+
+/** How a CSV is laid out. JSON and PDF are always itemised. */
+export const EXPORT_LAYOUTS = {
+  itemised: { label: "Itemised", description: "One row per expense" },
+  "tax-report": { label: "Tax report", description: "Itemised, plus category subtotals and a total" },
+  "monthly-summary": { label: "Monthly summary", description: "Spend per month, by category" },
+  "category-analysis": { label: "Category analysis", description: "Totals, averages and share per category" },
+} as const;
+export type ExportLayout = keyof typeof EXPORT_LAYOUTS;
+
+/** Layouts that list individual expenses (and so include descriptions). */
+export function isItemisedLayout(layout: ExportLayout): boolean {
+  return layout === "itemised" || layout === "tax-report";
+}
 
 export interface ExportOptions {
   format: ExportFormat;
@@ -11,6 +26,7 @@ export interface ExportOptions {
   from: IsoDate | "";
   to: IsoDate | "";
   categories: Category[];
+  layout: ExportLayout;
   /** Base name without extension, as typed by the user. */
   filename: string;
 }
@@ -21,11 +37,31 @@ export function defaultFilename(now: Date): string {
   return `expenses-${toIsoDate(now)}`;
 }
 
+const LAYOUT_SLUGS: Record<ExportLayout, string> = {
+  itemised: "expenses",
+  "tax-report": "tax-report",
+  "monthly-summary": "monthly-summary",
+  "category-analysis": "category-analysis",
+};
+
+/** A name that says what's in the file, e.g. `tax-report-fy2026` or `monthly-summary-2026-11-18`. */
+export function suggestedFilename(
+  options: Pick<ExportOptions, "format" | "layout" | "from" | "to">,
+  now: Date,
+): string {
+  const layout = options.format === "csv" ? options.layout : "itemised";
+  const preset = activePreset(options, now);
+  const fy =
+    preset === "this-fy" ? currentFinancialYear(now) : preset === "last-fy" ? currentFinancialYear(now) - 1 : null;
+  return `${LAYOUT_SLUGS[layout]}-${fy ? `fy${fy}` : toIsoDate(now)}`;
+}
+
 export function defaultExportOptions(now: Date, initial: Partial<ExportOptions> = {}): ExportOptions {
   return {
     format: "csv",
     from: "",
     to: "",
+    layout: "itemised",
     filename: defaultFilename(now),
     ...initial,
     // An empty category list from a caller means "no filter", which in this dialog is "all ticked".
@@ -40,6 +76,8 @@ export const DATE_PRESETS = {
   "this-month": "This month",
   "last-30": "Last 30 days",
   "this-year": "This year",
+  "this-fy": "This FY",
+  "last-fy": "Last FY",
 } as const;
 
 export type DatePreset = keyof typeof DATE_PRESETS;
@@ -55,6 +93,10 @@ export function presetRange(preset: DatePreset, now: Date): { from: IsoDate | ""
       return { from: toIsoDate(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29)), to: today };
     case "this-year":
       return { from: `${today.slice(0, 4)}-01-01`, to: today };
+    case "this-fy":
+      return financialYearToDate(currentFinancialYear(now), now);
+    case "last-fy":
+      return financialYearRange(currentFinancialYear(now) - 1);
   }
 }
 

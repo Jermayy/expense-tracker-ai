@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { ToastProvider } from "@/components/ui/Toast";
 import { ExportDialogProvider, useExportDialog } from "@/features/expenses/export/ExportDialog";
 import { saveExpenses } from "@/features/expenses/lib/storage";
@@ -160,6 +160,36 @@ describe("Export dialog", () => {
 
     expect(await screen.findByText(/^Exported 3 records to expenses-\d{4}-\d{2}-\d{2}\.csv$/)).toBeInTheDocument();
     expect(downloads).toHaveLength(1);
+  });
+
+  it("offers CSV layouts and names the file after the chosen one", async () => {
+    // "Last FY" depends on today's date, so pin it.
+    vi.useFakeTimers({ toFake: ["Date"], now: new Date(2026, 10, 18, 12) });
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
+    const downloads = captureDownloads();
+    const { user, dialog } = await setup();
+    await user.click(dialog.getByRole("radio", { name: /Tax report/ }));
+    await user.click(dialog.getByRole("button", { name: "Last FY" }));
+    expect(dialog.getByLabelText("File name")).toHaveValue("tax-report-fy2026");
+
+    await user.click(dialog.getByRole("radio", { name: /PDF/ }));
+    expect(dialog.queryByRole("radio", { name: /Tax report/ })).not.toBeInTheDocument();
+    await user.click(dialog.getByRole("radio", { name: /CSV/ }));
+    await user.click(dialog.getByRole("button", { name: "All time" }));
+    await user.click(dialog.getByRole("button", { name: "Export 3 records" }));
+
+    await screen.findByText(/^Exported 3 records to tax-report-/);
+    expect(await downloads[0].blob.text()).toContain("Category subtotals");
+  });
+
+  it("keeps a name the user typed when the layout changes", async () => {
+    const { user, dialog } = await setup();
+    await user.clear(dialog.getByLabelText("File name"));
+    await user.type(dialog.getByLabelText("File name"), "my export");
+    await user.click(dialog.getByRole("radio", { name: /Monthly summary/ }));
+    expect(dialog.getByLabelText("File name")).toHaveValue("my export");
   });
 
   it("keeps the dialog open and explains when the download fails", async () => {

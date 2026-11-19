@@ -93,3 +93,37 @@ the app at that point: `git checkout <tag>`.
   reads best with the right-aligned amount last. The step-2 order decision applies to CSV only.
 - Measured: page first-load sizes unchanged from step 2 (111 kB / 102 kB); the PDF writer is in
   the on-demand dialog chunk only.
+
+### Step 4: CSV layouts and financial-year presets
+
+**Adapted (not copied) from V3 `e2bf38f`, `src/features/exports/domain/templates.ts`:**
+
+- V3 had four standalone templates, each choosing its own records (tax report by financial
+  year, last N months, all time). Here they're **CSV layouts** that summarise whatever the
+  dialog has already filtered, so there's one set of filters and the layout only decides shape:
+  - `itemised` (default; the step-2 CSV)
+  - `tax-report`: itemised plus category subtotals and a total (V3 `taxReport`). Title names
+    the financial year when the range is exactly one.
+  - `monthly-summary`: months × categories (V3 `monthlySummary`), now spanning the chosen
+    dates (new helper `monthKeysBetween`), including empty months.
+  - `category-analysis`: count, total, average, share, largest (V3 `categoryAnalysis`,
+    `shareOf` unchanged).
+  - V3's "Full data" template isn't needed: it's the dialog's JSON format.
+- Code: `src/features/expenses/export/formats/csv.ts`. Layout option and labels in `options.ts`
+  (`EXPORT_LAYOUTS`, `isItemisedLayout`).
+- **Financial-year helpers** moved from V3's templates into a pure domain module,
+  `src/features/expenses/domain/financialYear.ts` (`currentFinancialYear`, `financialYearRange`,
+  `financialYearLabel` from V3; `financialYearToDate`, `financialYearOf` new).
+
+**New in this step:**
+
+- Date presets "This FY" (to date) and "Last FY" in the dialog.
+- Layout picker, shown only for CSV (JSON and PDF are always itemised).
+- Suggested filename follows the layout and range (`tax-report-fy2026`,
+  `monthly-summary-2026-11-19`) until the user types their own.
+- `describePeriod`/`describeCategories` moved from `formats/pdf.ts` to `formats/describe.ts`
+  so CSV and PDF share them.
+- Tests: `tests/financialYear.test.ts`, `tests/csvLayouts.test.ts` (both partly adapted from V3's
+  `tests/exportTemplates.test.ts`), plus additions to `exportOptions` and `ExportDialog` tests.
+
+**Not taken from V3:** template cards, the `/exports` page, per-template run dialogs.

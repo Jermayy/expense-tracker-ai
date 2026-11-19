@@ -3,6 +3,7 @@ import { CATEGORIES } from "@/features/expenses/domain/types";
 import {
   activePreset,
   defaultExportOptions,
+  suggestedFilename,
   presetRange,
   sanitizeFilename,
   selectExportRecords,
@@ -17,6 +18,7 @@ describe("defaultExportOptions", () => {
       format: "csv",
       from: "",
       to: "",
+      layout: "itemised",
       categories: [...CATEGORIES],
       filename: "expenses-2026-11-18",
     });
@@ -35,6 +37,8 @@ describe("date presets", () => {
     ["this-month", "2026-11-01", "2026-11-18"],
     ["last-30", "2026-10-20", "2026-11-18"],
     ["this-year", "2026-01-01", "2026-11-18"],
+    ["this-fy", "2026-07-01", "2026-11-18"],
+    ["last-fy", "2025-07-01", "2026-06-30"],
   ] as const)("%s covers %s to %s", (preset, from, to) => {
     expect(presetRange(preset, NOW)).toEqual({ from, to });
   });
@@ -137,5 +141,24 @@ describe("summarizeExport", () => {
 
   it("handles no records", () => {
     expect(summarizeExport([])).toEqual({ count: 0, totalCents: 0, firstDate: null, lastDate: null });
+  });
+});
+
+describe("suggestedFilename", () => {
+  const base = defaultExportOptions(NOW);
+
+  it("names the file after the layout and today", () => {
+    expect(suggestedFilename({ ...base, layout: "monthly-summary" }, NOW)).toBe("monthly-summary-2026-11-18");
+  });
+
+  it("uses the financial year when the range is one", () => {
+    expect(suggestedFilename({ ...base, layout: "tax-report", ...presetRange("last-fy", NOW) }, NOW)).toBe(
+      "tax-report-fy2026",
+    );
+    expect(suggestedFilename({ ...base, ...presetRange("this-fy", NOW) }, NOW)).toBe("expenses-fy2027");
+  });
+
+  it("ignores the layout for formats that are always itemised", () => {
+    expect(suggestedFilename({ ...base, format: "pdf", layout: "category-analysis" }, NOW)).toBe("expenses-2026-11-18");
   });
 });

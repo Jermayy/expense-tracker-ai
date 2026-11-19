@@ -9,16 +9,19 @@ import { useExpenses } from "../state/ExpensesProvider";
 import { FORMAT_SPECS } from "./formats";
 import {
   DATE_PRESETS,
+  EXPORT_LAYOUTS,
   EXPORT_FORMATS,
   MAX_FILENAME_LENGTH,
   activePreset,
   defaultExportOptions,
+  suggestedFilename,
   presetRange,
   sanitizeFilename,
   selectExportRecords,
   summarizeExport,
   validateExportOptions,
   type DatePreset,
+  type ExportLayout,
   type ExportOptions,
 } from "./options";
 import { ExportPreviewTable, ExportSummaryStats } from "./ExportPreview";
@@ -49,9 +52,14 @@ export function ExportPanel({ initial, onBusyChange, onDone }: ExportPanelProps)
     formRef.current?.querySelector<HTMLElement>("[data-autofocus]")?.focus();
   }, []);
 
+  // Until the user types their own name, the filename follows the layout and date range.
+  const [filenameEdited, setFilenameEdited] = useState(false);
   const set = (patch: Partial<ExportOptions>) => {
     setFailure(null);
-    setOptions((current) => ({ ...current, ...patch }));
+    setOptions((current) => {
+      const next = { ...current, ...patch };
+      return filenameEdited || "filename" in patch ? next : { ...next, filename: suggestedFilename(next, now) };
+    });
   };
 
   const records = useMemo(() => selectExportRecords(expenses, options), [expenses, options]);
@@ -85,6 +93,7 @@ export function ExportPanel({ initial, onBusyChange, onDone }: ExportPanelProps)
       <div className="grid gap-6 md:grid-cols-[21rem_minmax(0,1fr)]">
         <fieldset disabled={exporting} className="m-0 min-w-0 space-y-6 border-0 p-0">
           <FormatPicker value={options.format} onChange={(format) => set({ format })} />
+          {options.format === "csv" && <LayoutPicker value={options.layout} onChange={(layout) => set({ layout })} />}
           <DateRangeFields id={id} options={options} errors={errors} now={now} onChange={set} />
           <CategoryPicker
             expenses={expenses}
@@ -103,7 +112,10 @@ export function ExportPanel({ initial, onBusyChange, onDone }: ExportPanelProps)
                 maxLength={MAX_FILENAME_LENGTH + 10}
                 spellCheck={false}
                 autoComplete="off"
-                onChange={(e) => set({ filename: e.target.value })}
+                onChange={(e) => {
+                  setFilenameEdited(true);
+                  set({ filename: e.target.value });
+                }}
                 aria-invalid={errors.filename ? true : undefined}
                 aria-describedby={errors.filename ? `${id}-filename-error` : undefined}
                 className={`${inputBase} rounded-r-none`}
@@ -188,6 +200,36 @@ function Spinner() {
 }
 
 const legend = "mb-2 text-sm font-medium text-ink";
+
+function LayoutPicker({ value, onChange }: { value: ExportLayout; onChange: (layout: ExportLayout) => void }) {
+  const name = useId();
+  return (
+    <fieldset className="m-0 min-w-0 border-0 p-0">
+      <legend className={legend}>Layout</legend>
+      <div className="space-y-1">
+        {(Object.keys(EXPORT_LAYOUTS) as ExportLayout[]).map((layout) => (
+          <label
+            key={layout}
+            className="flex cursor-pointer items-start gap-2.5 rounded-lg px-2 py-1.5 text-sm hover:bg-surface-2"
+          >
+            <input
+              type="radio"
+              name={name}
+              value={layout}
+              checked={value === layout}
+              onChange={() => onChange(layout)}
+              className="mt-0.5 h-4 w-4 accent-[var(--accent)]"
+            />
+            <span>
+              <span className="block font-medium text-ink">{EXPORT_LAYOUTS[layout].label}</span>
+              <span className="block text-xs text-ink-muted">{EXPORT_LAYOUTS[layout].description}</span>
+            </span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
 
 function FormatPicker({
   value,
