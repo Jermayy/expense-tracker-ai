@@ -74,3 +74,22 @@ the app at that point: `git checkout <tag>`.
   Amount. Applies to the quick export and the dialog's CSV.
 - **Not taken from V2:** removal of `csvFilename`/`downloadCsv` from `lib/csv.ts` (the quick
   export uses them); V2's replacement of the Expenses page button with a dialog-only "Export…".
+
+### Step 3: PDF report
+
+**Taken unchanged:**
+
+| Path                                                  | From                                                               |
+| ----------------------------------------------------- | ------------------------------------------------------------------ |
+| `src/features/expenses/export/formats/pdf.ts`         | V2 `d6a47d3`                                                       |
+| `src/features/expenses/export/formats/pdfDocument.ts` | V2 `d6a47d3`                                                       |
+| `docs/adr/0003-built-in-pdf-writer-for-exports.md`    | V2 `d6a47d3`                                                       |
+| `tests/exportFormats.test.ts`                         | V2 `d6a47d3` (CSV expectation re-edited for step 2's column order) |
+
+**Changed while porting:**
+
+- Registered `pdf` in `EXPORT_FORMATS` and `FORMAT_SPECS`.
+- **PDF table keeps V2's column order** (Date, Category, Description, Amount): a printed report
+  reads best with the right-aligned amount last. The step-2 order decision applies to CSV only.
+- Measured: page first-load sizes unchanged from step 2 (111 kB / 102 kB); the PDF writer is in
+  the on-demand dialog chunk only.

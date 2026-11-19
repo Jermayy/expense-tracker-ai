@@ -2,7 +2,7 @@ import { isIsoDate, toIsoDate } from "../domain/dates";
 import { CATEGORIES, type Category, type Expense, type IsoDate } from "../domain/types";
 import { applyFilters, DEFAULT_FILTERS } from "../lib/filters";
 
-export const EXPORT_FORMATS = ["csv", "json"] as const;
+export const EXPORT_FORMATS = ["csv", "json", "pdf"] as const;
 export type ExportFormat = (typeof EXPORT_FORMATS)[number];
 
 export interface ExportOptions {
