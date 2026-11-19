@@ -1,7 +1,5 @@
-import { toIsoDate } from "../domain/dates";
 import { centsToDecimalString, CURRENCY } from "../domain/money";
 import type { Expense } from "../domain/types";
-import { downloadFile } from "./download";
 
 const HEADER = ["Date", "Description", "Category", `Amount (${CURRENCY})`];
 
@@ -17,13 +15,4 @@ export function expensesToCsv(expenses: readonly Expense[]): string {
   const rows = expenses.map((e) => [e.date, e.description, e.category, centsToDecimalString(e.amountCents)]);
   // CRLF per RFC 4180; Excel and Numbers both handle it.
   return [HEADER, ...rows].map((row) => row.map(escapeCsvCell).join(",")).join("\r\n");
-}
-
-export function csvFilename(now: Date): string {
-  return `expenses-${toIsoDate(now)}.csv`;
-}
-
-/** The BOM makes Excel read the file as UTF-8. */
-export function downloadCsv(csv: string, filename: string): void {
-  downloadFile(["\uFEFF", csv], "text/csv;charset=utf-8", filename);
 }

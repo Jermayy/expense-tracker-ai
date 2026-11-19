@@ -30,6 +30,7 @@ npm run check        # full CI sequence incl. build
 
 - `src/features/expenses/domain`: pure types/rules (money in cents, ISO dates, validation). No React.
 - `src/features/expenses/lib`: filters, analytics, CSV, storage repository.
+- `src/features/expenses/export`: export dialog. `options.ts` (pure selection/validation), `formats/` (one encoder per format behind `FORMAT_SPECS`; PDF via the built-in writer, [ADR 0003](docs/adr/0003-built-in-pdf-writer-for-exports.md)), `runExport.ts`.
 - `src/features/expenses/state/ExpensesProvider.tsx`: the only place that writes storage.
 - `src/components/ui`: shared primitives; colours are CSS-variable tokens in `globals.css`, mapped in `tailwind.config.ts`.
 
