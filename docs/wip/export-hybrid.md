@@ -150,3 +150,30 @@ the app at that point: `git checkout <tag>`.
 - The one-click "Export CSV" button doesn't redact; it's the fast path. Redaction is in the dialog.
 
 **Not taken from V3:** fingerprints (SHA-256), job steps/activity tray, simulated destinations.
+
+### Step 6: backup reminders
+
+**Replaces V3 `e2bf38f`'s schedules** (`domain/schedule.ts`, `SchedulesPanel.tsx`, the due
+banner and nav badge). V3 let users set daily/weekly/monthly exports, but a browser-only app
+can't run them in the background, so they only ever surfaced as "due" banners. This keeps that
+useful part (a timely nudge) and drops the configuration.
+
+**New:**
+
+- `src/features/expenses/lib/backupReminder.ts`: last-backup and snooze timestamps under their
+  own key `expense-tracker:backup:v1` (separate from expense data; unreadable state falls back
+  to empty). `isReminderDue`: due 7 days after the last backup; someone who has never backed up
+  is reminded once their oldest expense is 7 days old, so new users aren't nagged.
+- `src/features/expenses/components/BackupReminder.tsx`: dashboard banner with "Download
+  backup" (full JSON) and "Remind me in 3 days". The backup code
+  (`export/fullBackup.ts`) is loaded on click to keep the dashboard light (measured: `/` 112 kB,
+  +1 kB over step 5; it was +3 kB before lazy-loading).
+- **What counts as a backup** (`isFullBackup` in `options.ts`): every expense, unredacted, in
+  CSV itemised/tax-report or JSON. Recorded from all three paths: the one-click "Export CSV"
+  (when it's exporting everything), the dialog's Export, and Share. PDF and summaries don't
+  count: they can't be restored from.
+- Tests: `tests/backupReminder.test.ts`, `tests/BackupReminder.test.tsx`, additions to
+  `DashboardView` and `ExportDialog` tests.
+
+**Not taken from V3:** schedule configuration, frequencies, scheduled cloud uploads, the
+header sync-status pill.

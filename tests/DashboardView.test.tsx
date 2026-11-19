@@ -5,6 +5,7 @@ import { ToastProvider } from "@/components/ui/Toast";
 import { DashboardView } from "@/features/expenses/components/DashboardView";
 import { ExpenseDialogProvider } from "@/features/expenses/components/ExpenseDialog";
 import { ExportDialogProvider } from "@/features/expenses/export/ExportDialog";
+import { loadBackupState } from "@/features/expenses/lib/backupReminder";
 import { saveExpenses } from "@/features/expenses/lib/storage";
 import { ExpensesProvider } from "@/features/expenses/state/ExpensesProvider";
 import { buildExpense } from "./factories";
@@ -57,6 +58,8 @@ describe("DashboardView export", () => {
       "Date,Category,Amount (AUD),Description\r\n2026-11-02,Food,12.50,Lunch\r\n2026-10-15,Transportation,3.00,Bus",
     );
     expect(await screen.findByText("Exported 2 expenses to CSV")).toBeInTheDocument();
+    // Exporting every expense counts as a backup.
+    expect(loadBackupState().lastBackupAt).not.toBeNull();
   });
 
   it("opens the full export dialog from the options button", async () => {

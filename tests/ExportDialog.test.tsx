@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { ToastProvider } from "@/components/ui/Toast";
 import { ExportDialogProvider, useExportDialog } from "@/features/expenses/export/ExportDialog";
+import { loadBackupState } from "@/features/expenses/lib/backupReminder";
 import { saveExpenses } from "@/features/expenses/lib/storage";
 import { ExpensesProvider, useExpenses } from "@/features/expenses/state/ExpensesProvider";
 import { buildExpense } from "./factories";
@@ -190,6 +191,21 @@ describe("Export dialog", () => {
     await user.type(dialog.getByLabelText("File name"), "my export");
     await user.click(dialog.getByRole("radio", { name: /Monthly summary/ }));
     expect(dialog.getByLabelText("File name")).toHaveValue("my export");
+  });
+
+  it("records a backup only when every expense is exported", async () => {
+    captureDownloads();
+    const { user, dialog } = await setup();
+    await user.click(dialog.getByRole("checkbox", { name: /Bills/ }));
+    await user.click(dialog.getByRole("button", { name: "Export 2 records" }));
+    await screen.findByText(/^Exported 2 records/);
+    expect(loadBackupState().lastBackupAt).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Open export" }));
+    await screen.findByLabelText("Export summary");
+    await user.click(screen.getByRole("button", { name: "Export 3 records" }));
+    await screen.findByText(/^Exported 3 records/);
+    expect(loadBackupState().lastBackupAt).not.toBeNull();
   });
 
   it("redacts descriptions in the preview and the file", async () => {

@@ -172,6 +172,15 @@ export function includesDescriptions(options: Pick<ExportOptions, "format" | "la
   return fileFields(options).includes("Description");
 }
 
+/**
+ * Whether a finished export is a usable backup: every expense, unredacted, in a format that
+ * keeps each record (CSV itemised or tax report, or JSON). PDF and summaries don't qualify.
+ */
+export function isFullBackup(options: ExportOptions, exported: number, total: number): boolean {
+  const keepsRecords = options.format === "json" || (options.format === "csv" && isItemisedLayout(options.layout));
+  return keepsRecords && !options.redact && total > 0 && exported === total;
+}
+
 export function selectExportRecords(expenses: readonly Expense[], options: ExportOptions): Expense[] {
   // In the list filters an empty category list means "any"; here it means nothing is ticked.
   if (options.categories.length === 0) return [];

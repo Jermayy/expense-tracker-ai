@@ -14,6 +14,7 @@ import { useExpenseDialog } from "./ExpenseDialog";
 import { ExpenseList } from "./ExpenseList";
 import { EmptyState, LoadErrorView, LoadingSkeleton } from "./StatusViews";
 import { ExportSplitButton } from "./ExportSplitButton";
+import { BackupReminder } from "./BackupReminder";
 import { SummaryCards } from "./SummaryCards";
 import { useCsvExport } from "./useCsvExport";
 
@@ -91,6 +92,7 @@ export function DashboardView() {
   return (
     <>
       {header}
+      <BackupReminder />
       <div className="space-y-6">
         <SummaryCards summary={summary} currentMonth={monthKey(toIsoDate(now))} />
 

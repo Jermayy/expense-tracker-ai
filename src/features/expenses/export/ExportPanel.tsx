@@ -5,6 +5,7 @@ import { useToast } from "@/components/ui/Toast";
 import { buttonStyles, inputBase, labelBase } from "@/components/ui/styles";
 import { CATEGORIES, type Category, type Expense } from "../domain/types";
 import { CategoryDot } from "../components/CategoryBadge";
+import { recordBackup } from "../lib/backupReminder";
 import { useExpenses } from "../state/ExpensesProvider";
 import { FORMAT_SPECS } from "./formats";
 import {
@@ -16,6 +17,7 @@ import {
   defaultExportOptions,
   fileFields,
   includesDescriptions,
+  isFullBackup,
   suggestedFilename,
   presetRange,
   sanitizeFilename,
@@ -80,6 +82,7 @@ export function ExportPanel({ initial, onBusyChange, onDone }: ExportPanelProps)
     onBusyChange(true);
     try {
       const file = await runExport(expenses, options);
+      if (isFullBackup(options, file.summary.count, expenses.length)) recordBackup(new Date());
       toast.show(
         `Exported ${file.summary.count} ${file.summary.count === 1 ? "record" : "records"} to ${file.filename}`,
       );
@@ -99,6 +102,7 @@ export function ExportPanel({ initial, onBusyChange, onDone }: ExportPanelProps)
     onBusyChange(true);
     shareExport(expenses, options).then(
       (file) => {
+        if (isFullBackup(options, file.summary.count, expenses.length)) recordBackup(new Date());
         toast.show(`Shared ${file.filename}`);
         onDone();
       },
