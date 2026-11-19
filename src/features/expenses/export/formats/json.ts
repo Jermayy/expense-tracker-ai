@@ -16,6 +16,7 @@ export const jsonFormat: ExportFormatSpec = {
       version: JSON_EXPORT_VERSION,
       generatedAt: generatedAt.toISOString(),
       currency: CURRENCY,
+      redacted: options.redact,
       filters: {
         from: options.from || null,
         to: options.to || null,

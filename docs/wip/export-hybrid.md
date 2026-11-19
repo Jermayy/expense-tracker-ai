@@ -127,3 +127,26 @@ the app at that point: `git checkout <tag>`.
   `tests/exportTemplates.test.ts`), plus additions to `exportOptions` and `ExportDialog` tests.
 
 **Not taken from V3:** template cards, the `/exports` page, per-template run dialogs.
+
+### Step 5: redaction, "What's in the file", Share via device
+
+**Adapted from V3 `e2bf38f`:**
+
+| Feature                          | V3 source                                                                 | Here                                                                                                                                                                                     |
+| -------------------------------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Redact descriptions              | `params.redact` in `domain/templates.ts`, toggle in `RunExportDialog.tsx` | `ExportOptions.redact`; applied once in `buildExportFile` (`runExport.ts`) so every format is covered; preview shows `[redacted]`; JSON gets `redacted: true`; PDF notes it on the cover |
+| "What's in the file" panel       | `PrivacyPanel` in `RunExportDialog.tsx`                                   | `FileContents` in `ExportPanel.tsx`; field list from `fileFields()` in `options.ts`, by format and layout; toggle only shown when the file contains descriptions                         |
+| Share via device (Web Share API) | `canShareFiles`, `shareFile` in `lib/runJob.ts`                           | `canShareFiles`, `shareExport`, `isShareCancelled` in `runExport.ts`; "Share…" button in the dialog footer, only where supported                                                         |
+
+**Changed while porting:**
+
+- V3 hashed the file before opening the share sheet and had to reorder steps for Safari's
+  user-activation rule. There's no hashing here; `shareExport` builds synchronously and calls
+  `navigator.share` straight away.
+- Dismissing the share sheet (`AbortError`) isn't treated as an error: the dialog stays open, no
+  message. Other failures show "Sharing failed. Try Export instead."
+- V3's simulated-destination copy ("Demo: nothing leaves this device…") isn't needed: the panel
+  says Export saves locally and Share sends to the app the user picks.
+- The one-click "Export CSV" button doesn't redact; it's the fast path. Redaction is in the dialog.
+
+**Not taken from V3:** fingerprints (SHA-256), job steps/activity tray, simulated destinations.

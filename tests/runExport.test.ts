@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import { defaultExportOptions } from "@/features/expenses/export/options";
-import { buildExportFile, ExportValidationError, runExport } from "@/features/expenses/export/runExport";
+import {
+  buildExportFile,
+  ExportValidationError,
+  isShareCancelled,
+  runExport,
+  shareExport,
+} from "@/features/expenses/export/runExport";
 import { buildExpense, NOW } from "./factories";
 
 const expenses = [buildExpense({ category: "Food" }), buildExpense({ category: "Bills" })];
@@ -40,5 +46,52 @@ describe("runExport", () => {
     await expect(runExport(expenses, defaultExportOptions(NOW), { now: () => NOW, download })).rejects.toThrow(
       "blocked",
     );
+  });
+});
+
+describe("redaction", () => {
+  const secret = [buildExpense({ description: "Secret gift" })];
+  const text = async (format: "csv" | "json" | "pdf", redact: boolean) => {
+    const file = buildExportFile(secret, { ...defaultExportOptions(NOW), format, redact }, NOW);
+    return new Blob(file.parts).text();
+  };
+
+  it.each(["csv", "json"] as const)("removes descriptions from %s", async (format) => {
+    expect(await text(format, false)).toContain("Secret gift");
+    const redacted = await text(format, true);
+    expect(redacted).not.toContain("Secret gift");
+    expect(redacted).toContain("[redacted]");
+  });
+
+  it("removes descriptions from the PDF", async () => {
+    // PDF text is hex-encoded, so compare the encoded form of the description.
+    const hex = (t: string) => Array.from(t, (c) => c.charCodeAt(0).toString(16).padStart(2, "0")).join("");
+    expect(await text("pdf", false)).toContain(hex("Secret gift"));
+    expect(await text("pdf", true)).not.toContain(hex("Secret gift"));
+  });
+
+  it("flags redaction in JSON", async () => {
+    expect(JSON.parse(await text("json", true)).redacted).toBe(true);
+  });
+});
+
+describe("shareExport", () => {
+  it("hands the built file to the share sheet", async () => {
+    const share = vi.fn<(data: ShareData) => Promise<void>>(async () => {});
+    const file = await shareExport(
+      expenses,
+      { ...defaultExportOptions(NOW), format: "json" },
+      { now: () => NOW, share },
+    );
+    const data = share.mock.calls[0][0];
+    expect(data.files?.[0].name).toBe("expenses-2026-11-18.json");
+    expect(data.files?.[0].type).toBe("application/json");
+    expect(file.summary.count).toBe(2);
+  });
+
+  it("tells a cancelled share apart from a failure", () => {
+    expect(isShareCancelled(new DOMException("closed", "AbortError"))).toBe(true);
+    expect(isShareCancelled(new DOMException("blocked", "NotAllowedError"))).toBe(false);
+    expect(isShareCancelled(new Error("x"))).toBe(false);
   });
 });

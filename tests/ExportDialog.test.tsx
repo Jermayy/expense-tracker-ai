@@ -192,6 +192,26 @@ describe("Export dialog", () => {
     expect(dialog.getByLabelText("File name")).toHaveValue("my export");
   });
 
+  it("redacts descriptions in the preview and the file", async () => {
+    const downloads = captureDownloads();
+    const { user, dialog } = await setup();
+    await user.click(dialog.getByLabelText(/Redact descriptions/));
+    const fields = within(dialog.getByRole("list", { name: "Fields included" }));
+    expect(fields.getByText("Description").closest("li")).toHaveClass("line-through");
+    expect(dialog.queryByText("Lunch")).not.toBeInTheDocument();
+    expect(dialog.getAllByText("[redacted]")).toHaveLength(3);
+
+    await user.click(dialog.getByRole("button", { name: "Export 3 records" }));
+    await screen.findByText(/^Exported 3 records/);
+    expect(await downloads[0].blob.text()).not.toContain("Lunch");
+  });
+
+  it("hides the redaction option when the layout has no descriptions", async () => {
+    const { user, dialog } = await setup();
+    await user.click(dialog.getByRole("radio", { name: /Category analysis/ }));
+    expect(dialog.queryByLabelText(/Redact descriptions/)).not.toBeInTheDocument();
+  });
+
   it("keeps the dialog open and explains when the download fails", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     URL.createObjectURL = vi.fn(() => {
@@ -203,5 +223,42 @@ describe("Export dialog", () => {
     expect(await dialog.findByRole("alert")).toHaveTextContent("Export failed. Please try again.");
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(dialog.getByRole("button", { name: "Export 3 records" })).toBeEnabled();
+  });
+});
+
+describe("Share via device", () => {
+  function stubShare(share: (data: ShareData) => Promise<void>) {
+    Object.defineProperty(navigator, "canShare", { configurable: true, value: () => true });
+    Object.defineProperty(navigator, "share", { configurable: true, value: vi.fn(share) });
+    onTestFinished(() => {
+      delete (navigator as { canShare?: unknown }).canShare;
+      delete (navigator as { share?: unknown }).share;
+    });
+    return navigator.share as ReturnType<typeof vi.fn>;
+  }
+
+  it("is hidden when the browser can't share files", async () => {
+    const { dialog } = await setup();
+    expect(dialog.queryByRole("button", { name: "Share…" })).not.toBeInTheDocument();
+  });
+
+  it("shares the file and closes", async () => {
+    const share = stubShare(async () => {});
+    const { user, dialog } = await setup();
+    await user.click(dialog.getByRole("button", { name: "Share…" }));
+
+    expect(await screen.findByText(/^Shared expenses-\d{4}-\d{2}-\d{2}\.csv$/)).toBeInTheDocument();
+    expect(share).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("stays open without an error when the share sheet is dismissed", async () => {
+    stubShare(async () => Promise.reject(new DOMException("closed", "AbortError")));
+    const { user, dialog } = await setup();
+    await user.click(dialog.getByRole("button", { name: "Share…" }));
+
+    await waitFor(() => expect(dialog.getByRole("button", { name: "Share…" })).toBeEnabled());
+    expect(dialog.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 });

@@ -61,10 +61,19 @@ function drawCoverHeader(page: PdfPage, { summary, options, generatedAt }: Expor
   y -= 22;
   page.text(`Period: ${describePeriod(options)}`, MARGIN, y, { size: 9, color: INK });
   y -= 14;
-  page.text(truncateToWidth(`Categories: ${describeCategories(options)}`, 9, CONTENT_WIDTH), MARGIN, y, {
-    size: 9,
-    color: INK,
-  });
+  page.text(
+    truncateToWidth(
+      `Categories: ${describeCategories(options)}${options.redact ? " \u00b7 Descriptions redacted" : ""}`,
+      9,
+      CONTENT_WIDTH,
+    ),
+    MARGIN,
+    y,
+    {
+      size: 9,
+      color: INK,
+    },
+  );
   return y - 30;
 }
 

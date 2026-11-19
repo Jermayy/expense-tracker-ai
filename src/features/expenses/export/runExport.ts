@@ -2,6 +2,8 @@ import type { Expense } from "../domain/types";
 import { downloadFile } from "../lib/download";
 import { FORMAT_SPECS } from "./formats";
 import {
+  includesDescriptions,
+  redactRecords,
   sanitizeFilename,
   selectExportRecords,
   summarizeExport,
@@ -25,7 +27,9 @@ export function buildExportFile(expenses: readonly Expense[], options: ExportOpt
   if (errors.length) throw new ExportValidationError(errors[0]);
 
   const spec = FORMAT_SPECS[options.format];
-  const records = selectExportRecords(expenses, options);
+  const selected = selectExportRecords(expenses, options);
+  // Redact here, once, so no format can leak a description by forgetting to.
+  const records = options.redact && includesDescriptions(options) ? redactRecords(selected) : selected;
   const summary = summarizeExport(records);
   return {
     filename: `${sanitizeFilename(options.filename, options.format)}.${spec.extension}`,
@@ -46,5 +50,37 @@ export async function runExport(
   await nextFrame();
   const file = buildExportFile(expenses, options, now());
   download(file.parts, file.mimeType, file.filename);
+  return file;
+}
+
+/** Whether this browser can share files through the device's share sheet (Web Share API). */
+export function canShareFiles(): boolean {
+  if (typeof navigator === "undefined" || typeof navigator.canShare !== "function") return false;
+  try {
+    return navigator.canShare({ files: [new File([""], "probe.csv", { type: "text/csv" })] });
+  } catch {
+    return false;
+  }
+}
+
+/** The user closed the share sheet without choosing anything: not an error. */
+export function isShareCancelled(err: unknown): boolean {
+  return err instanceof DOMException && err.name === "AbortError";
+}
+
+/**
+ * Build the file and hand it to the device's share sheet. Browsers only allow sharing shortly
+ * after a click, so the file is built synchronously and nothing is awaited before `share`.
+ */
+export async function shareExport(
+  expenses: readonly Expense[],
+  options: ExportOptions,
+  {
+    now = () => new Date(),
+    share = (data: ShareData) => navigator.share(data),
+  }: { now?: () => Date; share?: (data: ShareData) => Promise<void> } = {},
+): Promise<ExportFile> {
+  const file = buildExportFile(expenses, options, now());
+  await share({ files: [new File(file.parts, file.filename, { type: file.mimeType })], title: file.filename });
   return file;
 }

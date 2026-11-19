@@ -3,7 +3,7 @@ import { formatDate } from "../domain/dates";
 import { formatCents } from "../domain/money";
 import type { Expense } from "../domain/types";
 import { CategoryBadge } from "../components/CategoryBadge";
-import type { ExportSummary } from "./options";
+import { REDACTED, type ExportSummary } from "./options";
 
 /** Rows rendered in the preview; the file always contains every matching record. */
 export const PREVIEW_LIMIT = 50;
@@ -33,7 +33,7 @@ export function ExportSummaryStats({ summary }: { summary: ExportSummary }) {
   );
 }
 
-export function ExportPreviewTable({ records }: { records: readonly Expense[] }) {
+export function ExportPreviewTable({ records, redacted = false }: { records: readonly Expense[]; redacted?: boolean }) {
   if (records.length === 0) {
     return (
       <div className={`${card} flex h-64 flex-col items-center justify-center gap-1 px-6 text-center`}>
@@ -72,8 +72,11 @@ export function ExportPreviewTable({ records }: { records: readonly Expense[] })
                 <td className="px-4 py-2">
                   <CategoryBadge category={e.category} />
                 </td>
-                <td className="max-w-[16rem] truncate px-4 py-2 text-ink" title={e.description}>
-                  {e.description}
+                <td
+                  className={`max-w-[16rem] truncate px-4 py-2 ${redacted ? "italic text-ink-soft" : "text-ink"}`}
+                  title={redacted ? undefined : e.description}
+                >
+                  {redacted ? REDACTED : e.description}
                 </td>
                 <td className="whitespace-nowrap px-4 py-2 text-right font-medium tabular-nums text-ink">
                   {formatCents(e.amountCents)}

@@ -27,6 +27,8 @@ export interface ExportOptions {
   to: IsoDate | "";
   categories: Category[];
   layout: ExportLayout;
+  /** Replace descriptions with a placeholder, to share amounts without saying what was bought. */
+  redact: boolean;
   /** Base name without extension, as typed by the user. */
   filename: string;
 }
@@ -62,6 +64,7 @@ export function defaultExportOptions(now: Date, initial: Partial<ExportOptions> 
     from: "",
     to: "",
     layout: "itemised",
+    redact: false,
     filename: defaultFilename(now),
     ...initial,
     // An empty category list from a caller means "no filter", which in this dialog is "all ticked".
@@ -143,6 +146,32 @@ export function validateExportOptions(options: ExportOptions): ExportErrors {
 }
 
 /** Records an export will contain, oldest first so reports read chronologically. */
+export const REDACTED = "[redacted]";
+
+export function redactRecords(records: readonly Expense[]): Expense[] {
+  return records.map((e) => ({ ...e, description: REDACTED }));
+}
+
+/** The fields a file will contain, for the "What's in the file" panel. Adapted from V3. */
+export function fileFields(options: Pick<ExportOptions, "format" | "layout">): string[] {
+  if (options.format === "json") return ["ID", "Date", "Category", "Description", "Amount (cents)", "Timestamps"];
+  if (options.format === "pdf") return ["Date", "Category", "Description", "Amount", "Totals"];
+  switch (options.layout) {
+    case "itemised":
+      return ["Date", "Category", "Amount", "Description"];
+    case "tax-report":
+      return ["Date", "Category", "Amount", "Description", "Category subtotals"];
+    case "monthly-summary":
+      return ["Month", "Category totals"];
+    case "category-analysis":
+      return ["Category", "Count", "Total", "Average", "Share", "Largest"];
+  }
+}
+
+export function includesDescriptions(options: Pick<ExportOptions, "format" | "layout">): boolean {
+  return fileFields(options).includes("Description");
+}
+
 export function selectExportRecords(expenses: readonly Expense[], options: ExportOptions): Expense[] {
   // In the list filters an empty category list means "any"; here it means nothing is ticked.
   if (options.categories.length === 0) return [];

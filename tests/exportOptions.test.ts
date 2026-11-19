@@ -3,6 +3,8 @@ import { CATEGORIES } from "@/features/expenses/domain/types";
 import {
   activePreset,
   defaultExportOptions,
+  fileFields,
+  includesDescriptions,
   suggestedFilename,
   presetRange,
   sanitizeFilename,
@@ -19,6 +21,7 @@ describe("defaultExportOptions", () => {
       from: "",
       to: "",
       layout: "itemised",
+      redact: false,
       categories: [...CATEGORIES],
       filename: "expenses-2026-11-18",
     });
@@ -160,5 +163,21 @@ describe("suggestedFilename", () => {
 
   it("ignores the layout for formats that are always itemised", () => {
     expect(suggestedFilename({ ...base, format: "pdf", layout: "category-analysis" }, NOW)).toBe("expenses-2026-11-18");
+  });
+});
+
+describe("fileFields", () => {
+  const base = defaultExportOptions(NOW);
+
+  it("lists what each format and layout contains", () => {
+    expect(fileFields(base)).toEqual(["Date", "Category", "Amount", "Description"]);
+    expect(fileFields({ ...base, layout: "monthly-summary" })).toEqual(["Month", "Category totals"]);
+    expect(fileFields({ ...base, format: "json", layout: "monthly-summary" })).toContain("Description");
+  });
+
+  it("only offers redaction when descriptions are in the file", () => {
+    expect(includesDescriptions({ ...base, layout: "tax-report" })).toBe(true);
+    expect(includesDescriptions({ ...base, layout: "category-analysis" })).toBe(false);
+    expect(includesDescriptions({ ...base, format: "pdf" })).toBe(true);
   });
 });

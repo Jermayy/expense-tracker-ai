@@ -14,6 +14,8 @@ import {
   MAX_FILENAME_LENGTH,
   activePreset,
   defaultExportOptions,
+  fileFields,
+  includesDescriptions,
   suggestedFilename,
   presetRange,
   sanitizeFilename,
@@ -25,7 +27,7 @@ import {
   type ExportOptions,
 } from "./options";
 import { ExportPreviewTable, ExportSummaryStats } from "./ExportPreview";
-import { runExport } from "./runExport";
+import { canShareFiles, isShareCancelled, runExport, shareExport } from "./runExport";
 
 export type InitialOptions = Partial<Pick<ExportOptions, "from" | "to" | "categories">>;
 
@@ -68,6 +70,8 @@ export function ExportPanel({ initial, onBusyChange, onDone }: ExportPanelProps)
   const spec = FORMAT_SPECS[options.format];
   const filename = `${sanitizeFilename(options.filename, options.format) || "…"}.${spec.extension}`;
   const canExport = Object.keys(errors).length === 0 && summary.count > 0 && !exporting;
+  const [deviceShareSupported] = useState(canShareFiles);
+  const redacting = options.redact && includesDescriptions(options);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -86,6 +90,26 @@ export function ExportPanel({ initial, onBusyChange, onDone }: ExportPanelProps)
       setExporting(false);
       onBusyChange(false);
     }
+  }
+
+  // Not an async-first handler: the share sheet must open within the click (see shareExport).
+  function share() {
+    if (!canExport) return;
+    setExporting(true);
+    onBusyChange(true);
+    shareExport(expenses, options).then(
+      (file) => {
+        toast.show(`Shared ${file.filename}`);
+        onDone();
+      },
+      (err) => {
+        setExporting(false);
+        onBusyChange(false);
+        if (isShareCancelled(err)) return;
+        console.error("[export] share failed", { format: options.format, count: summary.count }, err);
+        setFailure("Sharing failed. Try Export instead.");
+      },
+    );
   }
 
   return (
@@ -130,11 +154,16 @@ export function ExportPanel({ initial, onBusyChange, onDone }: ExportPanelProps)
               </p>
             )}
           </div>
+          <FileContents
+            options={options}
+            onRedactChange={(redact) => set({ redact })}
+            shareAvailable={deviceShareSupported}
+          />
         </fieldset>
 
         <div className="min-w-0 space-y-4">
           <ExportSummaryStats summary={summary} />
-          <ExportPreviewTable records={records} />
+          <ExportPreviewTable records={records} redacted={redacting} />
         </div>
       </div>
 
@@ -154,6 +183,11 @@ export function ExportPanel({ initial, onBusyChange, onDone }: ExportPanelProps)
           <button type="button" className={buttonStyles.secondary} onClick={onDone} disabled={exporting}>
             Cancel
           </button>
+          {deviceShareSupported && (
+            <button type="button" className={buttonStyles.secondary} onClick={share} disabled={!canExport}>
+              Share…
+            </button>
+          )}
           <button type="submit" className={buttonStyles.primary} disabled={!canExport}>
             {exporting ? (
               <>
@@ -200,6 +234,65 @@ function Spinner() {
 }
 
 const legend = "mb-2 text-sm font-medium text-ink";
+
+/** What leaves the device, and the option to hide descriptions. Adapted from V3's privacy panel. */
+function FileContents({
+  options,
+  onRedactChange,
+  shareAvailable,
+}: {
+  options: ExportOptions;
+  onRedactChange: (redact: boolean) => void;
+  shareAvailable: boolean;
+}) {
+  const id = useId();
+  const canRedact = includesDescriptions(options);
+  const redacting = options.redact && canRedact;
+  return (
+    <section aria-labelledby={`${id}-h`} className="rounded-lg bg-surface-2 p-4">
+      <h3 id={`${id}-h`} className="text-sm font-semibold text-ink">
+        What&apos;s in the file
+      </h3>
+      <p className="mt-1 text-xs text-ink-muted">
+        {shareAvailable
+          ? "Export saves it to this device. Share sends it to the app you pick."
+          : "Saved to this device. Nothing is uploaded."}
+      </p>
+      <ul className="mt-3 flex flex-wrap gap-1.5" aria-label="Fields included">
+        {fileFields(options).map((field) => {
+          const removed = redacting && field === "Description";
+          return (
+            <li
+              key={field}
+              className={`rounded-full border border-line px-2 py-0.5 text-xs ${
+                removed ? "text-ink-soft line-through" : "bg-surface text-ink"
+              }`}
+            >
+              {field}
+              {removed && <span className="sr-only"> (redacted)</span>}
+            </li>
+          );
+        })}
+      </ul>
+      {canRedact && (
+        <label className="mt-3 flex cursor-pointer items-start gap-2 text-sm text-ink">
+          <input
+            type="checkbox"
+            checked={options.redact}
+            onChange={(e) => onRedactChange(e.target.checked)}
+            className="mt-0.5 h-4 w-4 accent-[var(--accent)]"
+          />
+          <span>
+            Redact descriptions
+            <span className="block text-xs text-ink-muted">
+              Share amounts and categories without saying what you bought.
+            </span>
+          </span>
+        </label>
+      )}
+    </section>
+  );
+}
 
 function LayoutPicker({ value, onChange }: { value: ExportLayout; onChange: (layout: ExportLayout) => void }) {
   const name = useId();
