@@ -7,12 +7,15 @@ import { buttonStyles, card } from "@/components/ui/styles";
 import { monthKey, toIsoDate } from "../domain/dates";
 import { TREND_MONTHS, summarize } from "../lib/analytics";
 import { applyFilters, DEFAULT_FILTERS } from "../lib/filters";
+import { useExportDialog } from "../export/ExportDialog";
 import { useExpenses } from "../state/ExpensesProvider";
 import { CategoryBreakdown, MonthlyTrend } from "./charts";
 import { useExpenseDialog } from "./ExpenseDialog";
 import { ExpenseList } from "./ExpenseList";
 import { EmptyState, LoadErrorView, LoadingSkeleton } from "./StatusViews";
+import { ExportSplitButton } from "./ExportSplitButton";
 import { SummaryCards } from "./SummaryCards";
+import { useCsvExport } from "./useCsvExport";
 
 const RECENT_COUNT = 5;
 
@@ -20,14 +23,21 @@ export function DashboardView() {
   const { status, loadError, expenses, loadSampleData } = useExpenses();
   const { openAdd } = useExpenseDialog();
   const toast = useToast();
+  const exportCsv = useCsvExport();
+  const { openExport } = useExportDialog();
   const now = useMemo(() => new Date(), []);
   const summary = useMemo(() => summarize(expenses, now), [expenses, now]);
   const recent = useMemo(() => applyFilters(expenses, DEFAULT_FILTERS).slice(0, RECENT_COUNT), [expenses]);
 
   const header = (
-    <div className="mb-6">
-      <h1 className="text-2xl font-semibold tracking-tight text-ink">Dashboard</h1>
-      <p className="mt-1 text-sm text-ink-muted">An overview of where your money goes.</p>
+    <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight text-ink">Dashboard</h1>
+        <p className="mt-1 text-sm text-ink-muted">An overview of where your money goes.</p>
+      </div>
+      {status === "ready" && expenses.length > 0 && (
+        <ExportSplitButton onQuickExport={() => exportCsv(expenses)} onMoreOptions={() => openExport()} />
+      )}
     </div>
   );
 

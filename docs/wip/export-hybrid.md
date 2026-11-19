@@ -38,3 +38,39 @@ the app at that point: `git checkout <tag>`.
   `docs/wip/`; `pull_request` now also triggers on `ready_for_review` so marking a draft ready
   re-runs it. Origin: new, not from V1–V3.
 - **Updated** `CLAUDE.md`: documents the `docs/wip/` convention.
+
+### Step 2: export dialog + one-click export
+
+**Taken unchanged** (`git checkout <branch> -- <path>`):
+
+| Path                                                                                                                   | From                              |
+| ---------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| `src/features/expenses/export/options.ts`                                                                              | V2 `d6a47d3` (then edited, below) |
+| `src/features/expenses/export/runExport.ts`                                                                            | V2 `d6a47d3`                      |
+| `src/features/expenses/export/ExportPreview.tsx`                                                                       | V2 `d6a47d3`                      |
+| `src/features/expenses/export/formats/{types,csv,json,index}.ts`                                                       | V2 `d6a47d3` (`index.ts` edited)  |
+| `src/components/ui/Modal.tsx` (`size` prop)                                                                            | V2 `d6a47d3`                      |
+| `src/features/expenses/components/useCsvExport.ts`                                                                     | V1 `65bb4d0`                      |
+| `src/features/expenses/lib/csv.ts` (column order)                                                                      | V1 `65bb4d0`                      |
+| `tests/csv.test.ts`                                                                                                    | V1 `65bb4d0`                      |
+| `tests/exportOptions.test.ts`, `tests/runExport.test.ts`, `tests/exportFormats.test.ts`, `tests/ExportDialog.test.tsx` | V2 `d6a47d3` (edited)             |
+| `tests/DashboardView.test.tsx`                                                                                         | V1 `65bb4d0` (edited)             |
+
+**Changed while porting:**
+
+- **Code-split the dialog.** V2's `ExportDialog.tsx` was split into a light provider
+  (`ExportDialog.tsx`, always loaded) and `ExportPanel.tsx` (everything else), loaded with
+  `next/dynamic` when the dialog first opens. Measured: `/` first load 111 kB vs V2's 115 kB;
+  the panel is its own ~17 KB chunk.
+- **Focus after lazy load.** The Modal sets initial focus before the panel exists, so the panel
+  focuses its `[data-autofocus]` element on mount. Covered by a new test.
+- **PDF held back** until step 3: `EXPORT_FORMATS` is `["csv", "json"]`, PDF tests removed for now.
+- **One-click export kept (from V1's idea, new component).** `ExportSplitButton.tsx`:
+  "Export CSV" downloads immediately via V1's `useCsvExport` hook; the "Options" half opens the
+  dialog. On the Expenses page it exports the filtered list and pre-fills the dialog with the
+  page's filters (V2 behaviour); on the dashboard it exports everything.
+- **CSV column order decided: Date, Category, Amount (AUD), Description** (V1, matching the
+  exercise's stated requirement). V2's and `main`'s order was Date, Description, Category,
+  Amount. Applies to the quick export and the dialog's CSV.
+- **Not taken from V2:** removal of `csvFilename`/`downloadCsv` from `lib/csv.ts` (the quick
+  export uses them); V2's replacement of the Expenses page button with a dialog-only "Export…".

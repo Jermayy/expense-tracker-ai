@@ -7,10 +7,13 @@ interface ModalProps {
   title: string;
   onClose: () => void;
   children: React.ReactNode;
+  size?: keyof typeof SIZES;
 }
 
+const SIZES = { md: "max-w-lg", xl: "max-w-5xl" };
+
 /** Native <dialog>: focus trapping, Esc-to-close and inert background come for free. */
-export function Modal({ open, title, onClose, children }: ModalProps) {
+export function Modal({ open, title, onClose, children, size = "md" }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
 
@@ -39,7 +42,7 @@ export function Modal({ open, title, onClose, children }: ModalProps) {
         // Clicking the backdrop (the dialog element itself) closes it.
         if (e.target === e.currentTarget) onClose();
       }}
-      className="m-auto w-[calc(100%-2rem)] max-w-lg rounded-xl border border-line bg-surface p-0 text-ink shadow-2xl"
+      className={`m-auto w-[calc(100%-2rem)] ${SIZES[size]} rounded-xl border border-line bg-surface p-0 text-ink shadow-2xl`}
     >
       {open && (
         <div className="p-6">
