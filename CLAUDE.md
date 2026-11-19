@@ -48,6 +48,10 @@ npm run check        # full CI sequence incl. build
 - Next 14 has unpatched advisories; accepted only because production is a static export (ADR 0001).
 - No error tracker configured yet. CI (`.github/workflows/ci.yml`) runs the `npm run check` steps, gitleaks and a non-blocking `npm audit` (blocking would always fail on the accepted Next 14 advisories).
 
+## Branch-only notes
+
+- `docs/wip/` holds working notes for a feature branch (e.g. where ported code came from). CI's "No branch-only docs" job fails any non-draft PR that still contains it: delete the folder before marking the PR ready.
+
 ## Sensitive areas
 
 - Users' financial data in `localStorage`: never overwrite unreadable data without explicit user confirmation.
