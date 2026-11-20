@@ -190,6 +190,18 @@ header sync-status pill.
 - Final measurements: `/` 112 kB, `/expenses` 103 kB first load (V1: 110 / 100, V2: 115 / 106);
   export dialog and PDF writer load on first open.
 
+### Step 8: filtering docs and nav-link fix
+
+- **Docs** (permanent): `docs/features/filtering.md` and `docs/user-guide/filtering.md`, written
+  with the project `/document-feature` command, plus indexes, screenshots in
+  `docs/screenshots/filtering/` (production build, sample data, clock pinned to 20 Nov 2026) and
+  README/CLAUDE.md cross-references.
+- **Bug found while capturing screenshots:** clicking **Expenses** in the nav while on a filtered
+  list reset the URL but kept the filters on screen, because `ExpensesView` read the URL only on
+  mount. It now adopts URL changes from navigation, and ignores the router's late echoes of its
+  own `replaceState` while typing. Regression tests in `tests/ExpensesView.test.tsx`; checked in
+  Chrome against the production build.
+
 ## Before merging: scrub checklist
 
 1. Decide this is the version to merge (V1–V3 branches and the tags above stay as references).
