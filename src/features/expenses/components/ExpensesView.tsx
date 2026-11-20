@@ -26,6 +26,15 @@ export function ExpensesView() {
   const [filters, setFilters] = useState(() => filtersFromSearchParams(new URLSearchParams(searchParams.toString())));
   const [confirmClear, setConfirmClear] = useState(false);
 
+  // A navigation to this page (e.g. the nav link while filtered) changes the URL without remounting: adopt it.
+  // Updates that lag behind the live URL are echoes of our own replaceState below while typing, so skip them.
+  useEffect(() => {
+    if (searchParams.toString() !== new URLSearchParams(window.location.search).toString()) return;
+    const fromUrl = filtersFromSearchParams(new URLSearchParams(searchParams.toString()));
+    const key = filtersToSearchParams(fromUrl).toString();
+    setFilters((current) => (filtersToSearchParams(current).toString() === key ? current : fromUrl));
+  }, [searchParams]);
+
   // The URL mirrors the filters so a filtered view can be bookmarked or refreshed.
   useEffect(() => {
     const query = filtersToSearchParams(filters).toString();
