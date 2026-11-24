@@ -94,7 +94,7 @@ context and guardrails I gave the agent alongside the prompt:
 - **Add / edit / delete** expenses (date, amount, category, description), with inline validation and **undo** on delete
 - **Dashboard**: total, this month (vs last month), daily average, top category, 6-month trend chart, category breakdown, recent expenses
 - **Expenses list**: text search, date-range and multi-category filters, sorting. Filters are stored in the URL, so you can bookmark or refresh a filtered view ([user guide](docs/user-guide/filtering.md))
-- **Export**: one click downloads a CSV of what's on screen; **Options** opens the export dialog:
+- **Export**: one click downloads a CSV of what's on screen; **Options** opens the export dialog ([design decisions](docs/adr/0004-export-feature-design.md)):
   - CSV, JSON or a paginated PDF report ([ADR 0003](docs/adr/0003-built-in-pdf-writer-for-exports.md))
   - CSV layouts: itemised, tax report (with category subtotals), monthly summary, category analysis
   - date range with presets, including this and last Australian financial year; category selection with counts
