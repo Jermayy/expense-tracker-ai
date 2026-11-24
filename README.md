@@ -3,7 +3,7 @@
 [![CI](https://github.com/Jermayy/expense-tracker-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/Jermayy/expense-tracker-ai/actions/workflows/ci.yml)
 ![Next.js 14](https://img.shields.io/badge/Next.js-14-black?logo=next.js)
 ![TypeScript strict](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-84%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-184%20passing-brightgreen)
 
 A personal expense tracker built with Next.js 14 (App Router), TypeScript and Tailwind CSS.
 Add, edit, filter and analyse your spending; export to CSV. All data stays in your browser (`localStorage`).
@@ -59,16 +59,16 @@ context and guardrails I gave the agent alongside the prompt:
 
 ### What "production-ready" meant here
 
-| Area           | What's in the repo                                                                                                                                                                                                                                                                                                                                       |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Architecture   | Code organised by feature; a pure domain layer (`src/features/expenses/domain`) with no React; one provider is the only code that writes to storage                                                                                                                                                                                                      |
-| Data integrity | Money stored as integer cents (never floats); calendar dates with no timezone shift; a versioned storage envelope validated on every load; corrupt data is never silently overwritten                                                                                                                                                                    |
-| Security       | [ADR 0001](docs/adr/0001-nextjs-14-static-export-localstorage.md): `npm audit` flagged open advisories in Next 14, so the app ships as a static export with no server attack surface. [ADR 0002](docs/adr/0002-vercel-hosting-and-security-headers.md): CSP and security headers set in `vercel.json`. CSV export is protected against formula injection |
-| Testing        | 84 tests across 11 files (Vitest + Testing Library): domain rules, filters, analytics, CSV, storage failures, provider behaviour, form validation and dialog focus. Deterministic: injected clock, IDs and storage, pinned timezone                                                                                                                      |
-| Accessibility  | Semantic HTML, labelled fields, keyboard operable, managed modal focus, accessible undo toasts, OS light/dark theme                                                                                                                                                                                                                                      |
-| UX states      | Loading, empty, error and success states on every view; undo on delete; multi-tab sync                                                                                                                                                                                                                                                                   |
-| Delivery       | GitHub Actions on every push and PR: install from lockfile, format, lint, type check, tests, build, plus gitleaks secret scanning and a dependency audit. `main` is protected: changes land by pull request with green CI. Vercel deploys a preview for every PR and production on merge. Dependabot keeps dependencies and actions current              |
-| Tooling        | TypeScript strict, ESLint, Prettier, pinned Node version (`.nvmrc`), one command for the full CI sequence                                                                                                                                                                                                                                                |
+| Area           | What's in the repo                                                                                                                                                                                                                                                                                                                                                                        |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Architecture   | Code organised by feature; a pure domain layer (`src/features/expenses/domain`) with no React; one provider is the only code that writes to storage                                                                                                                                                                                                                                       |
+| Data integrity | Money stored as integer cents (never floats); calendar dates with no timezone shift; a versioned storage envelope validated on every load; corrupt data is never silently overwritten                                                                                                                                                                                                     |
+| Security       | [ADR 0001](docs/adr/0001-nextjs-14-static-export-localstorage.md): `npm audit` flagged open advisories in Next 14, so the app ships as a static export with no server attack surface. [ADR 0002](docs/adr/0002-vercel-hosting-and-security-headers.md): CSP and security headers set in `vercel.json`. CSV export is protected against formula injection; export file names are sanitised |
+| Testing        | 184 tests across 21 files (Vitest + Testing Library): domain rules, filters, analytics, export formats and layouts (CSV, JSON, PDF structure), the export dialog, backup reminders, storage failures, provider behaviour, form validation and dialog focus. Deterministic: injected clock, IDs and storage, pinned timezone                                                               |
+| Accessibility  | Semantic HTML, labelled fields, keyboard operable, managed modal focus, accessible undo toasts, OS light/dark theme                                                                                                                                                                                                                                                                       |
+| UX states      | Loading, empty, error and success states on every view; undo on delete; multi-tab sync                                                                                                                                                                                                                                                                                                    |
+| Delivery       | GitHub Actions on every push and PR: install from lockfile, format, lint, type check, tests, build, plus gitleaks secret scanning and a dependency audit. `main` is protected: changes land by pull request with green CI. Vercel deploys a preview for every PR and production on merge. Dependabot keeps dependencies and actions current                                               |
+| Tooling        | TypeScript strict, ESLint, Prettier, pinned Node version (`.nvmrc`), one command for the full CI sequence                                                                                                                                                                                                                                                                                 |
 
 ### What it shows about my progression
 
@@ -93,8 +93,15 @@ context and guardrails I gave the agent alongside the prompt:
 
 - **Add / edit / delete** expenses (date, amount, category, description), with inline validation and **undo** on delete
 - **Dashboard**: total, this month (vs last month), daily average, top category, 6-month trend chart, category breakdown, recent expenses
-- **Expenses list**: text search, date-range and multi-category filters, sorting. Filters are stored in the URL, so you can bookmark or refresh a filtered view
-- **CSV export** of the current filtered view (Excel-safe UTF-8, protected against formula injection)
+- **Expenses list**: text search, date-range and multi-category filters, sorting. Filters are stored in the URL, so you can bookmark or refresh a filtered view ([user guide](docs/user-guide/filtering.md))
+- **Export**: one click downloads a CSV of what's on screen; **Options** opens the export dialog ([design decisions](docs/adr/0004-export-feature-design.md)):
+  - CSV, JSON or a paginated PDF report ([ADR 0003](docs/adr/0003-built-in-pdf-writer-for-exports.md))
+  - CSV layouts: itemised, tax report (with category subtotals), monthly summary, category analysis
+  - date range with presets, including this and last Australian financial year; category selection with counts
+  - live summary and preview, a list of exactly what's in the file, and an option to redact descriptions
+  - **Share…** sends the file to the device's share sheet where the browser supports it
+  - CSV is Excel-safe UTF-8 and protected against formula injection; columns are Date, Category, Amount, Description
+- **Backup reminders**: a dashboard banner when the last full backup is a week old, with one-click JSON backup
 - Responsive layout (table on desktop, cards on mobile), light/dark theme from your OS setting, keyboard and screen-reader friendly
 - Clear loading, empty and error states. If stored data is corrupt it's never silently overwritten: you can download a backup first
 - Multi-tab sync: changes in one tab show up in the others
@@ -133,10 +140,13 @@ src/
     domain/                  types, money (integer cents), dates, validation (pure, no React)
     lib/                     filters, analytics, CSV, localStorage repository, sample data
     state/                   ExpensesProvider: React context, persists before committing to state
+    export/                  export dialog (code-split), options, CSV/JSON/PDF encoders, full backup
     components/              form, dialog, list, filters bar, charts, summary cards, views
 tests/                       Vitest tests
 docs/adr/                    architecture decisions
-docs/screenshots/            README images
+docs/features/               developer docs per feature
+docs/user-guide/             user guides per feature
+docs/screenshots/            README and user-guide images
 .github/                     CI workflow and Dependabot config
 ```
 
@@ -150,4 +160,4 @@ docs/screenshots/            README images
 ## Privacy
 
 Expenses never leave the browser: no analytics, no network calls. Clearing site data, private
-windows, or Safari's 7-day storage eviction can delete them, so **export to CSV regularly**.
+windows, or Safari's 7-day storage eviction can delete them, so **export regularly**. The dashboard reminds you when your last full backup is a week old.

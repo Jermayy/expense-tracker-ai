@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
+    # ready_for_review re-runs checks when a draft is marked ready (see wip-docs below).
+    types: [opened, synchronize, reopened, ready_for_review]
 
 permissions:
   contents: read
@@ -57,3 +59,20 @@ jobs:
       # Next server. Production is a static export, so they're accepted in ADR 0001.
       - run: npm audit --omit=dev --audit-level=high
         continue-on-error: true
+
+  wip-docs:
+    name: No branch-only docs
+    # docs/wip/ holds working notes for a branch (e.g. provenance of ported code). They're fine
+    # while a PR is a draft and must be deleted before it's marked ready and merged.
+    if: github.event_name == 'pull_request' && !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fail if docs/wip/ exists
+        run: |
+          if [ -d docs/wip ]; then
+            echo "::error::docs/wip/ contains branch-only notes. Delete it before this PR leaves draft."
+            ls -R docs/wip
+            exit 1
+          fi
