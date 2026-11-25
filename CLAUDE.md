@@ -33,6 +33,7 @@ npm run check        # full CI sequence incl. build
 - `src/features/expenses/state/ExpensesProvider.tsx`: the only place that writes expense storage.
 - `src/features/expenses/export`: export dialog. `ExportDialog.tsx` is the light provider; `ExportPanel.tsx` and the encoders load on first open (`next/dynamic`). `options.ts` is pure (selection, validation, layouts, `isFullBackup`); `formats/` has one encoder per format behind `FORMAT_SPECS`; redaction is applied once in `runExport.ts`.
 - `src/features/expenses/lib/backupReminder.ts`: last-backup/snooze state under its own key `expense-tracker:backup:v1`.
+- `src/features/expenses/lib/budget.ts`: the monthly budget (Insights page) under its own key `expense-tracker:budget:v1`. `lib/insights.ts` is pure: this month's category totals and the budget streak.
 - `src/components/ui`: shared primitives; colours are CSS-variable tokens in `globals.css`, mapped in `tailwind.config.ts`.
 - `docs/features/` (developer docs) and `docs/user-guide/` (user guides, screenshots in `docs/screenshots/<feature>/`): one cross-linked pair per feature, written with `/document-feature`.
 

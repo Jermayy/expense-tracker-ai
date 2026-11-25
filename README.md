@@ -93,6 +93,7 @@ context and guardrails I gave the agent alongside the prompt:
 
 - **Add / edit / delete** expenses (date, amount, category, description), with inline validation and **undo** on delete
 - **Dashboard**: total, this month (vs last month), daily average, top category, 6-month trend chart, category breakdown, recent expenses
+- **Monthly Insights** (`/insights/`): this month's spending donut, top 3 categories, and a budget streak against a monthly budget you set ([user guide](docs/user-guide/monthly-insights.md))
 - **Expenses list**: text search, date-range and multi-category filters, sorting. Filters are stored in the URL, so you can bookmark or refresh a filtered view ([user guide](docs/user-guide/filtering.md))
 - **Export**: one click downloads a CSV of what's on screen; **Options** opens the export dialog ([design decisions](docs/adr/0004-export-feature-design.md)):
   - CSV, JSON or a paginated PDF report ([ADR 0003](docs/adr/0003-built-in-pdf-writer-for-exports.md))
@@ -134,11 +135,11 @@ No environment variables are needed (there's no backend), so there's no `.env.ex
 
 ```
 src/
-  app/                       routes: / (dashboard), /expenses, layout, error + 404 pages
+  app/                       routes: / (dashboard), /expenses, /insights, layout, error + 404 pages
   components/                AppShell + ui/ primitives (Modal, Toast, ConfirmDialog, styles)
   features/expenses/
     domain/                  types, money (integer cents), dates, validation (pure, no React)
-    lib/                     filters, analytics, CSV, localStorage repository, sample data
+    lib/                     filters, analytics, insights + budget, CSV, localStorage repository, sample data
     state/                   ExpensesProvider: React context, persists before committing to state
     export/                  export dialog (code-split), options, CSV/JSON/PDF encoders, full backup
     components/              form, dialog, list, filters bar, charts, summary cards, views
