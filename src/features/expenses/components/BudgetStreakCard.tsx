@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useToast } from "@/components/ui/Toast";
 import { buttonStyles, inputBase, labelBase } from "@/components/ui/styles";
 import { MAX_AMOUNT_CENTS, centsToDecimalString, formatCents, parseAmountToCents } from "../domain/money";
@@ -26,6 +26,8 @@ export function BudgetStreakCard({ expenses, monthTotalCents, now }: BudgetStrea
   const returnFocus = useRef(false);
 
   useEffect(() => setBudget(loadBudget()), []);
+
+  const streak = useMemo(() => (budget ? budgetStreak(expenses, budget, now) : 0), [expenses, budget, now]);
 
   // After saving or cancelling, the form unmounts: send focus to "Edit budget" rather than <body>.
   // Depends on budget too, because a first save changes budget while editing stays false.
@@ -75,7 +77,6 @@ export function BudgetStreakCard({ expenses, monthTotalCents, now }: BudgetStrea
     );
   }
 
-  const streak = budgetStreak(expenses, budget, now);
   const allowance = dailyAllowanceCents(budget, now);
   const usedShare = Math.min(monthTotalCents / budget, 1);
   const over = monthTotalCents > budget;

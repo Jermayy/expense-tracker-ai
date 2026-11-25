@@ -15,7 +15,8 @@ export function isIsoDate(value: unknown): value is IsoDate {
 
 /** Local calendar date for `now` as `YYYY-MM-DD`. */
 export function toIsoDate(now: Date): IsoDate {
-  const y = now.getFullYear();
+  // Pad so years before 1000 still give `YYYY-MM-DD`, which isIsoDate accepts and strings compare by.
+  const y = String(now.getFullYear()).padStart(4, "0");
   const m = String(now.getMonth() + 1).padStart(2, "0");
   const d = String(now.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;

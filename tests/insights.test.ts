@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { budgetStreak, dailyAllowanceCents, daysInMonth, monthlySpending } from "@/features/expenses/lib/insights";
+import {
+  MAX_STREAK_DAYS,
+  budgetStreak,
+  dailyAllowanceCents,
+  daysInMonth,
+  monthlySpending,
+} from "@/features/expenses/lib/insights";
 import { BUDGET_STORAGE_KEY, loadBudget, parseBudget, saveBudget } from "@/features/expenses/lib/budget";
 import { StorageError } from "@/features/expenses/lib/storage";
 import { buildExpense, NOW } from "./factories";
@@ -108,6 +114,19 @@ describe("budgetStreak", () => {
       buildExpense({ date: "2026-11-01", amountCents: 10_300 }), // under November's $103.33
     ];
     expect(budgetStreak(expenses, budget, now)).toBe(3); // 31 Oct, 1 Nov, 2 Nov
+  });
+
+  it("never counts back before an earliest expense dated before year 1000", () => {
+    // toIsoDate doesn't pad years under 1000, so a string comparison never stopped here.
+    const expenses = [buildExpense({ date: "0999-05-01", amountCents: 100 })];
+    expect(budgetStreak(expenses, BUDGET, new Date(999, 4, 10, 12))).toBe(10);
+  });
+
+  it("caps very long streaks", () => {
+    const expenses = [buildExpense({ date: "1026-11-25", amountCents: 100 })];
+    const start = performance.now();
+    expect(budgetStreak(expenses, BUDGET, NOW)).toBe(MAX_STREAK_DAYS);
+    expect(performance.now() - start).toBeLessThan(100);
   });
 
   it("ignores future-dated expenses", () => {

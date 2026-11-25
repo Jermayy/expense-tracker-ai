@@ -3,6 +3,8 @@ import { CATEGORIES, type Category, type Expense, type IsoDate } from "../domain
 import type { CategoryTotal } from "./analytics";
 
 export const TOP_CATEGORY_COUNT = 3;
+/** About ten years. Bounds the day-by-day walk when the earliest expense is very old (or a typo). */
+export const MAX_STREAK_DAYS = 3660;
 
 export interface MonthlySpending {
   /** `YYYY-MM` of the month described. */
@@ -55,7 +57,7 @@ export function dailyAllowanceCents(monthlyBudgetCents: number, now: Date): numb
  * Consecutive days, ending today, on which spending was at or under the daily allowance
  * (monthly budget ÷ days in that day's month). Today counts while it's under, since it's
  * "so far". Counting stops at the first day over the allowance, and never goes back before
- * the earliest expense: there's no record of earlier days to claim them.
+ * the earliest expense: there's no record of earlier days to claim them. Capped at MAX_STREAK_DAYS.
  */
 export function budgetStreak(expenses: readonly Expense[], monthlyBudgetCents: number, now: Date): number {
   const today = toIsoDate(now);
@@ -70,7 +72,7 @@ export function budgetStreak(expenses: readonly Expense[], monthlyBudgetCents: n
 
   let streak = 0;
   // Build each day from calendar parts so DST changes can't skip or repeat a day.
-  for (let offset = 0; ; offset++) {
+  for (let offset = 0; offset < MAX_STREAK_DAYS; offset++) {
     const day = new Date(now.getFullYear(), now.getMonth(), now.getDate() - offset);
     const iso = toIsoDate(day);
     if (iso < earliest) break;
