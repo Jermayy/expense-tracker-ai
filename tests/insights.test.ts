@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { budgetStreak, dailyAllowanceCents, daysInMonth, monthlyInsights } from "@/features/expenses/lib/insights";
+import { budgetStreak, dailyAllowanceCents, daysInMonth, monthlySpending } from "@/features/expenses/lib/insights";
 import { BUDGET_STORAGE_KEY, loadBudget, parseBudget, saveBudget } from "@/features/expenses/lib/budget";
 import { StorageError } from "@/features/expenses/lib/storage";
 import { buildExpense, NOW } from "./factories";
@@ -7,9 +7,9 @@ import { buildExpense, NOW } from "./factories";
 // NOW is 18 Nov 2026. November has 30 days, so $3,000/month is exactly $100/day.
 const BUDGET = 300_000;
 
-describe("monthlyInsights", () => {
+describe("monthlySpending", () => {
   it("totals only the current month, largest category first", () => {
-    const result = monthlyInsights(
+    const result = monthlySpending(
       [
         buildExpense({ date: "2026-11-01", category: "Food", amountCents: 42_000 }),
         buildExpense({ date: "2026-11-18", category: "Transportation", amountCents: 18_000 }),
@@ -29,7 +29,7 @@ describe("monthlyInsights", () => {
   });
 
   it("keeps the fixed category order for ties", () => {
-    const result = monthlyInsights(
+    const result = monthlySpending(
       [
         buildExpense({ category: "Other", amountCents: 500 }),
         buildExpense({ category: "Bills", amountCents: 500 }),
@@ -41,12 +41,12 @@ describe("monthlyInsights", () => {
   });
 
   it("returns fewer than three when fewer categories have spending", () => {
-    const result = monthlyInsights([buildExpense({ category: "Food" })], NOW);
+    const result = monthlySpending([buildExpense({ category: "Food" })], NOW);
     expect(result.top).toHaveLength(1);
   });
 
   it("is empty when nothing was spent this month", () => {
-    const result = monthlyInsights([buildExpense({ date: "2026-10-01" })], NOW);
+    const result = monthlySpending([buildExpense({ date: "2026-10-01" })], NOW);
     expect(result).toMatchObject({ totalCents: 0, count: 0, byCategory: [], top: [] });
   });
 });

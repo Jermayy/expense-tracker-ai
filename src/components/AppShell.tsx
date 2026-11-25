@@ -9,6 +9,7 @@ import { useExpenses } from "@/features/expenses/state/ExpensesProvider";
 const NAV = [
   { href: "/", label: "Dashboard" },
   { href: "/expenses/", label: "Expenses" },
+  { href: "/insights/", label: "Insights" },
 ];
 
 function isActive(pathname: string, href: string): boolean {

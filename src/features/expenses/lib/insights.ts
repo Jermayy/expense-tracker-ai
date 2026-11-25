@@ -4,7 +4,7 @@ import type { CategoryTotal } from "./analytics";
 
 export const TOP_CATEGORY_COUNT = 3;
 
-export interface MonthlyInsights {
+export interface MonthlySpending {
   /** `YYYY-MM` of the month described. */
   month: string;
   totalCents: number;
@@ -16,7 +16,7 @@ export interface MonthlyInsights {
 }
 
 /** Spending by category for the calendar month containing `now`. */
-export function monthlyInsights(expenses: readonly Expense[], now: Date): MonthlyInsights {
+export function monthlySpending(expenses: readonly Expense[], now: Date): MonthlySpending {
   const month = monthKey(toIsoDate(now));
   const totals = new Map<Category, { totalCents: number; count: number }>(
     CATEGORIES.map((c) => [c, { totalCents: 0, count: 0 }]),
