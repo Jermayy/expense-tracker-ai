@@ -5,6 +5,20 @@ export function categoryColor(category: Category): string {
   return `var(--cat-${CATEGORIES.indexOf(category) + 1})`;
 }
 
+const CATEGORY_EMOJI: Record<Category, string> = {
+  Food: "🍔",
+  Transportation: "🚗",
+  Entertainment: "🎬",
+  Shopping: "🛍️",
+  Bills: "🧾",
+  Other: "📦",
+};
+
+/** Decorative only: always render next to the category name and hide it from assistive tech. */
+export function categoryEmoji(category: Category): string {
+  return CATEGORY_EMOJI[category];
+}
+
 export function CategoryDot({ category }: { category: Category }) {
   return (
     <span

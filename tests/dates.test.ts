@@ -24,3 +24,7 @@ describe("recentMonthKeys", () => {
 it("toIsoDate uses the local calendar date", () => {
   expect(toIsoDate(new Date(2026, 0, 1, 0, 30))).toBe("2026-01-01");
 });
+
+it("toIsoDate pads years before 1000 to four digits", () => {
+  expect(toIsoDate(new Date(999, 4, 1))).toBe("0999-05-01");
+});
