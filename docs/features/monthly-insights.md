@@ -47,14 +47,17 @@ flowchart LR
 - A day counts if its total is at or under that day's allowance. Days with no expenses count.
 - Today counts as "so far". If today is already over, the streak is 0.
 - Stop at the first day over the allowance, or before the earliest expense, because there's no record of earlier days.
-- Future-dated expenses are ignored.
+- Stop after `MAX_STREAK_DAYS` (3,660, about ten years) in any case, so a typo'd date like `0999-…` can't make the walk huge.
+- Future-dated expenses are ignored. The donut, top 3 and "X of budget" bar do include future-dated expenses in the current month, the same as the Dashboard's "This month" card.
 - Days are built from calendar parts, so daylight-saving changes don't skip or repeat a day.
 
 **Progress bar.** This month's total as a share of the budget, capped at 100%. When over budget it turns red and shows "Over this month's budget." as text, so colour isn't the only cue.
 
 **Accessibility.**
 
-- The donut is a single image whose accessible name lists every category with its amount and share. The centre label is `aria-hidden` because the name already covers it.
+- The donut is a single image whose accessible name lists every category with its amount and share. The centre label and the visible legend (every segment, so colour is never the only cue) are `aria-hidden` because the name already covers them.
+- The streak number and its unit are one paragraph, so they're read together ("12 days!").
+- The month subtitle isn't rendered while loading, which is the state that gets prerendered, so the static HTML doesn't contain the build month.
 - Emoji are `aria-hidden`.
 - The top 3 is an ordered list.
 - The budget input is labelled. Errors use `role="alert"` with `aria-invalid` and `aria-describedby`.
@@ -66,4 +69,5 @@ flowchart LR
 
 - Only the current month is shown. There's no month picker.
 - One budget for the whole month. There are no per-category budgets.
-- The budget is per browser and isn't included in exports or the full backup.
+- The budget is per browser and isn't included in exports or the full backup, so restoring a backup on a new browser means setting it again.
+- `now` is fixed when the page mounts. A tab left open past midnight shows yesterday's streak until it's reloaded (the Dashboard behaves the same).
