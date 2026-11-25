@@ -84,10 +84,13 @@ export function BudgetStreakCard({ expenses, monthTotalCents, now }: BudgetStrea
   return (
     <section className={`${dashedCard} text-center`} aria-labelledby="streak-heading">
       {heading}
-      <p className="mt-2 text-5xl font-bold tabular-nums text-positive">{streak}</p>
-      <p className="text-lg font-medium text-ink">
-        {streak === 1 ? "day" : "days"}
-        {streak > 0 ? "!" : ""}
+      {/* One element so it's read as "12 days!", not "12", then "days!". */}
+      <p className="mt-2 flex flex-col items-center">
+        <span className={`text-5xl font-bold tabular-nums ${streak > 0 ? "text-positive" : "text-ink"}`}>{streak}</span>{" "}
+        <span className="text-lg font-medium text-ink">
+          {streak === 1 ? "day" : "days"}
+          {streak > 0 ? "!" : ""}
+        </span>
       </p>
       <p className="mt-2 text-sm text-ink-muted">
         {streak > 0

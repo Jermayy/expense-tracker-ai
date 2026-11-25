@@ -23,7 +23,8 @@ export function MonthlyInsights({ now: nowProp }: { now?: Date }) {
   const header = (
     <div className="mb-6 text-center">
       <h1 className="text-2xl font-semibold tracking-tight text-ink">Monthly Insights</h1>
-      <p className="mt-1 text-sm text-ink-muted">{formatMonthLong(month.month)}</p>
+      {/* Not while loading: that's what gets prerendered, and it would bake in the build month. */}
+      <p className="mt-1 h-5 text-sm text-ink-muted">{status === "loading" ? "" : formatMonthLong(month.month)}</p>
     </div>
   );
 
