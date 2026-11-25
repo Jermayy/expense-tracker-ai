@@ -31,7 +31,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         Skip to content
       </a>
       <header className="bg-surface/90 sticky top-0 z-30 border-b border-line backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4 sm:px-6">
+        {/* Below sm the nav gets its own row (scrollable if needed) so the header never overflows a 320px screen. */}
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 px-4 py-2 sm:h-16 sm:flex-nowrap sm:px-6 sm:py-0">
           <Link href="/" className="flex items-center gap-2 font-semibold text-ink">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-accent-ink">
               <svg aria-hidden viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
@@ -45,7 +46,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </span>
             <span className="hidden sm:inline">Spendwise</span>
           </Link>
-          <nav aria-label="Main" className="flex items-center gap-1">
+          <nav
+            aria-label="Main"
+            className="order-last -mx-3 flex w-[calc(100%+1.5rem)] items-center gap-1 overflow-x-auto pt-1 sm:order-none sm:mx-0 sm:w-auto sm:overflow-visible sm:pt-0"
+          >
             {NAV.map((item) => {
               const active = isActive(pathname, item.href);
               return (
