@@ -137,6 +137,9 @@ describe("budget storage", () => {
     expect(parseBudget(JSON.stringify({ version: 2, monthlyBudgetCents: 100 }))).toBeNull();
     expect(parseBudget(JSON.stringify({ version: 1, monthlyBudgetCents: -5 }))).toBeNull();
     expect(parseBudget(JSON.stringify({ version: 1, monthlyBudgetCents: 1.5 }))).toBeNull();
+    expect(parseBudget(JSON.stringify({ version: 1, monthlyBudgetCents: 1_000_000_001 }))).toBeNull();
+    expect(parseBudget("5")).toBeNull();
+    expect(parseBudget("null")).toBeNull();
   });
 
   it("rejects invalid amounts without writing", () => {

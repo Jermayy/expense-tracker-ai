@@ -14,17 +14,19 @@ export function isValidBudgetCents(value: unknown): value is number {
 /** Returns the stored monthly budget in cents, or null when none is set or it can't be read. */
 export function parseBudget(raw: string | null): number | null {
   if (raw === null) return null;
+  let data: unknown;
   try {
-    const data: unknown = JSON.parse(raw);
-    if (typeof data !== "object" || data === null) return null;
-    const { version, monthlyBudgetCents } = data as Record<string, unknown>;
-    if (version !== BUDGET_SCHEMA_VERSION || !isValidBudgetCents(monthlyBudgetCents)) return null;
-    return monthlyBudgetCents;
+    data = JSON.parse(raw);
   } catch {
-    // A single setting the user can re-enter, not expense data: treat as "not set".
-    console.warn("[budget] stored budget was unreadable; treating it as not set");
-    return null;
+    data = undefined;
   }
+  if (typeof data === "object" && data !== null) {
+    const { version, monthlyBudgetCents } = data as Record<string, unknown>;
+    if (version === BUDGET_SCHEMA_VERSION && isValidBudgetCents(monthlyBudgetCents)) return monthlyBudgetCents;
+  }
+  // A single setting the user can re-enter, not expense data: treat as "not set".
+  console.warn("[budget] stored budget was unreadable; treating it as not set");
+  return null;
 }
 
 export function loadBudget(storage: Storage = window.localStorage): number | null {

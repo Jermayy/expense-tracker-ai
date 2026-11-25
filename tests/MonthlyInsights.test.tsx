@@ -1,6 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { ToastProvider } from "@/components/ui/Toast";
 import { ExpenseDialogProvider } from "@/features/expenses/components/ExpenseDialog";
 import { MonthlyInsights } from "@/features/expenses/components/MonthlyInsights";
@@ -20,6 +20,12 @@ function renderInsights() {
     </ToastProvider>,
   );
 }
+
+const streakCard = () => within(screen.getByRole("region", { name: "Budget streak" }));
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 const NOVEMBER = [
   buildExpense({ date: "2026-11-07", category: "Food", amountCents: 42_000 }),
@@ -44,11 +50,10 @@ describe("MonthlyInsights", () => {
     expect(within(donut).getByText("$725.00")).toBeInTheDocument();
 
     const items = within(screen.getByRole("list")).getAllByRole("listitem");
-    expect(items.map((li) => li.textContent)).toEqual([
-      "🍔Food$420.00",
-      "🚗Transportation$180.00",
-      "🎬Entertainment$95.00",
-    ]);
+    expect(items).toHaveLength(3);
+    expect(items[0]).toHaveTextContent(/Food.*\$420\.00/);
+    expect(items[1]).toHaveTextContent(/Transportation.*\$180\.00/);
+    expect(items[2]).toHaveTextContent(/Entertainment.*\$95\.00/);
   });
 
   it("shows an empty state when there are no expenses", async () => {
@@ -82,7 +87,7 @@ describe("MonthlyInsights", () => {
     await user.click(screen.getByRole("button", { name: "Save budget" }));
 
     expect(loadBudget()).toBe(3_000_000);
-    expect(await screen.findByText("30")).toBeInTheDocument();
+    expect(await streakCard().findByText("30")).toBeInTheDocument();
     expect(screen.getByText("days!")).toBeInTheDocument();
     expect(screen.getByText("In a row at or under $1,000.00 a day.")).toBeInTheDocument();
     expect(screen.getByText("$725.00 of $30,000.00")).toBeInTheDocument();
@@ -95,7 +100,7 @@ describe("MonthlyInsights", () => {
     renderInsights();
     const user = userEvent.setup();
 
-    expect(await screen.findByText("8")).toBeInTheDocument(); // 11th..18th
+    expect(await streakCard().findByText("8")).toBeInTheDocument(); // 11th..18th
     expect(screen.getByText("In a row at or under $100.00 a day.")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Edit budget" }));
@@ -103,9 +108,44 @@ describe("MonthlyInsights", () => {
     expect(input).toHaveFocus();
     expect(input).toHaveValue("3000.00");
 
+    await user.clear(input);
+    await user.type(input, "50");
     await user.click(screen.getByRole("button", { name: "Cancel" }));
     expect(screen.getByRole("button", { name: "Edit budget" })).toHaveFocus();
-    expect(window.localStorage.getItem(BUDGET_STORAGE_KEY)).toContain("300000");
+    expect(loadBudget()).toBe(300_000);
+    expect(screen.getByText("In a row at or under $100.00 a day.")).toBeInTheDocument();
+  });
+
+  it.each([
+    ["abc", "greater than $0"],
+    ["12.345", "greater than $0"],
+    ["10000001", "up to $10,000,000.00"],
+  ])("rejects a budget of %s", async (typed, message) => {
+    saveExpenses(NOVEMBER);
+    renderInsights();
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Monthly budget (AUD)"), typed);
+    await user.click(screen.getByRole("button", { name: "Save budget" }));
+    expect(screen.getByRole("alert")).toHaveTextContent(message);
+    expect(loadBudget()).toBeNull();
+  });
+
+  it("keeps the form open with an error when the budget can't be saved", async () => {
+    saveExpenses(NOVEMBER);
+    renderInsights();
+    const user = userEvent.setup();
+    const input = await screen.findByLabelText("Monthly budget (AUD)");
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new DOMException("full", "QuotaExceededError");
+    });
+
+    await user.type(input, "2000");
+    await user.click(screen.getByRole("button", { name: "Save budget" }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent("Couldn't save your budget");
+    expect(input).toHaveValue("2000");
+    expect(screen.queryByText("Budget saved")).not.toBeInTheDocument();
+    expect(window.localStorage.getItem(BUDGET_STORAGE_KEY)).toBeNull();
   });
 
   it("flags a month that's over budget", async () => {
